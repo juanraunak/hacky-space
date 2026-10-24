@@ -1,0 +1,17 @@
+.ts-layer { position: fixed; inset: 0; z-index: 4; pointer-events: none; touch-action: none; }
+.ts-stick {
+  position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.04);
+  transition: opacity 0.2s; opacity: 0.55;
+}
+.ts-stick.on { opacity: 1; }
+.ts-l:not(.on) { left: max(90px, calc(env(safe-area-inset-left) + 90px)); top: calc(100% - 110px); }
+.ts-r:not(.on) { left: calc(100% - max(90px, calc(env(safe-area-inset-right) + 90px))); top: calc(100% - 110px); }
+.ts-nub { position: absolute; left: 34px; top: 34px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); box-shadow: 0 0 14px rgba(140, 200, 255, 0.4); }
+.ts-btn {
+  position: absolute; pointer-events: auto; width: 64px; height: 64px; border-radius: 50%; padding: 0;
+  font: 700 11px 'Space Grotesk', system-ui, sans-serif; letter-spacing: 0.08em; color: #fff;
+  background: rgba(20, 28, 50, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.35); touch-action: none;
+}
+.ts-grab { right: max(170px, calc(env(safe-area-inset-right) + 170px)); bottom: 150px; }
+.ts-boost { right: max(24px, calc(env(safe-area-inset-right) + 24px)); bottom: 205px; }

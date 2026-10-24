@@ -1,0 +1,105 @@
+/* Boss-style arrival card: letterbox bars, a big tracked-in title, a thin
+   line, an italic subtitle. Every animated value is written by BossCard's
+   animation frame loop; this file only lays it out. */
+
+.boss {
+  position: fixed;
+  inset: 0;
+  z-index: 1; /* above the canvas, under the HUD so dialogue stays readable */
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  font-family: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #f4efe6;
+}
+
+.boss-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: #000;
+  will-change: transform;
+}
+.boss-bar.top {
+  top: 0;
+  height: calc(min(11vh, 120px) + env(safe-area-inset-top, 0px));
+  transform: translateY(-100%);
+}
+.boss-bar.bottom {
+  bottom: 0;
+  height: calc(min(11vh, 120px) + env(safe-area-inset-bottom, 0px));
+  transform: translateY(100%);
+}
+
+/* a soft dark pool behind the words, so they read over a bright disc */
+.boss-shade {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(140vw, 1400px);
+  height: min(70vh, 640px);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+}
+
+.boss-block {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.boss-eyebrow {
+  font-size: clamp(11px, 1.4vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.5em;
+  padding-left: 0.5em; /* balances the trailing tracking */
+  text-transform: uppercase;
+  color: var(--boss-accent, #ffd9a0);
+  opacity: 0;
+  margin-bottom: clamp(10px, 1.8vh, 18px);
+  white-space: nowrap;
+}
+
+.boss-title {
+  margin: 0;
+  font-size: min(8.5vw, 15vh, 112px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.2em;
+  padding-left: 0.2em;
+  white-space: nowrap;
+  max-width: 100%;
+  text-transform: uppercase;
+  opacity: 0;
+  will-change: opacity, letter-spacing, filter;
+  text-shadow: 0 0 24px var(--boss-glow, rgba(255, 190, 110, 0.45)), 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.boss-line {
+  height: 1px;
+  width: min(560px, 74vw);
+  margin: clamp(12px, 2.2vh, 22px) 0 clamp(10px, 1.8vh, 18px);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--boss-accent, #ffd9a0) 20%, #fff 50%, var(--boss-accent, #ffd9a0) 80%, rgba(255, 255, 255, 0));
+  transform: scaleX(0);
+  opacity: 0;
+  box-shadow: 0 0 10px var(--boss-glow, rgba(255, 190, 110, 0.45));
+}
+
+.boss-sub {
+  margin: 0;
+  font-size: clamp(15px, min(2.6vw, 4vh), 26px);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: #e9e2d6;
+  opacity: 0;
+  max-width: 100%;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
+}

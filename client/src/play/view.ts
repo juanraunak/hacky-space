@@ -1,8 +1,4 @@
-// Which camera: driving from behind the ship, or sitting in the cockpit.
-export const view = {
-  mode: (() => { try { return localStorage.getItem('hackyspace.view') === 'cockpit' ? 'cockpit' : 'chase'; } catch { return 'chase'; } })() as 'chase' | 'cockpit',
-};
-export function toggleView() {
-  view.mode = view.mode === 'chase' ? 'cockpit' : 'chase';
-  try { localStorage.setItem('hackyspace.view', view.mode); } catch { /* fine */ }
-}
+// One view only (Juan): the spaceship view from behind. The cockpit view is
+// gone; toggleView is kept as a no-op so old callers still compile.
+export const view = { mode: 'chase' as 'chase' | 'cockpit' };
+export function toggleView() { /* the spaceship view is the only view */ }
