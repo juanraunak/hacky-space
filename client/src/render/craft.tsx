@@ -19,6 +19,8 @@ import { MOTHERSHIP, DOCK_OFFSET, C, PHYSICS_FX } from '../game/constants';
 import { doppler } from '../relativity/physics';
 import { fmtClock } from '../play/einstein';
 import { Q } from './quality';
+import { Kid, kidLook } from './Npc';
+import { foot } from '../play/onfoot';
 
 const hull = new THREE.MeshStandardMaterial({ color: '#c9ced6', metalness: 0.85, roughness: 0.32 });
 const dark = new THREE.MeshStandardMaterial({ color: '#2a2e36', metalness: 0.7, roughness: 0.5 });
@@ -116,18 +118,24 @@ export function LocalShip() {
 // --- other pilots -------------------------------------------------------------
 
 function RemoteShip({ identity }: { identity: string }) {
+  const player = net.players().find(p => p.identity === identity);
   const ref = useRef<THREE.Group>(null);
+  const craft = useRef<THREE.Group>(null);
+  const kid = useRef<THREE.Group>(null);
+  const kidTag = useRef<HTMLDivElement>(null);
+  const kidSpeed = useRef(0);
+  const look = useMemo(() => kidLook(identity, player?.color ?? '#aaa'), [identity, player?.color]);
   const engine = useRef(0);
   const tint = useRef(new THREE.Color(0, 0, 0));
   const tag = useRef<HTMLDivElement>(null);
   const last = useRef({ tau: 0, t: 0, rate: 1 });
-  const player = net.players().find(p => p.identity === identity);
   useFrame((_, dt) => {
     const row = net.ship(identity);
     const g = ref.current;
     if (!row || !g) return;
     // Extrapolate from the latest row, then smooth toward it.
-    const age = Math.min(1, Math.max(0, (net.now() - row.updatedAt) / 1000));
+    // (no extrapolation on foot: a stopped walker's last velocity would drift them)
+    const age = row.status === 'home' ? 0 : Math.min(1, Math.max(0, (net.now() - row.updatedAt) / 1000));
     const tx = row.x + row.vx * age, ty = row.y + row.vy * age, tz = row.z + row.vz * age;
     let d = remote.get(identity);
     const tq = new THREE.Quaternion(row.qx, row.qy, row.qz, row.qw).normalize();
@@ -143,8 +151,21 @@ function RemoteShip({ identity }: { identity: string }) {
     const f = new THREE.Vector3(0, 0, -1).applyQuaternion(d.q);
     d.fx = f.x; d.fy = f.y; d.fz = f.z;
     place(g, d);
-    g.quaternion.copy(d.q);
-    g.visible = row.status !== 'home';
+    // Status 'home' means on foot in the ship (play/onfoot.ts): a kid in their
+    // colour, upright, seen only by players still on foot themselves.
+    const walking = row.status === 'home';
+    g.visible = !walking || foot.mode === 'foot';
+    if (craft.current) { craft.current.visible = !walking; craft.current.quaternion.copy(d.q); }
+    if (kid.current) {
+      kid.current.visible = walking;
+      if (walking) {
+        const yaw = Math.atan2(-f.x, -f.z);
+        kid.current.rotation.set(0, yaw + Math.PI, 0);
+        kidSpeed.current += (Math.min(1, Math.hypot(row.vx, row.vz) / 2.5) - kidSpeed.current) * k;
+      }
+    }
+    if (tag.current) tag.current.style.display = walking ? 'none' : '';
+    if (kidTag.current) { kidTag.current.style.display = walking ? '' : 'none'; kidTag.current.textContent = player?.name ?? ''; }
     const speed = Math.hypot(row.vx, row.vy, row.vz);
     engine.current += ((row.status === 'dark' ? 0 : speed > 1 ? 0.7 : 0.1) - engine.current) * k;
 

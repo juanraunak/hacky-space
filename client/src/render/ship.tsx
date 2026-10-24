@@ -4,7 +4,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Figure } from './Figures';
+import { Npc } from './Npc';
+import { newDrive } from '../play/onfoot';
 import { Plant } from './Plant';
 import { drawDials, type Dial } from '../hud/dials';
 import { comms } from '../play/einstein';
@@ -56,13 +57,19 @@ export function dialsNow(): Dial[] {
 
 export function Cockpit() {
   const camera = useThree(s => s.camera);
-  const talk = useRef(0);
-  const look = useRef<THREE.Vector3 | null>(new THREE.Vector3());
+  // Hacky-style Einstein (render/Npc.tsx) in the co-pilot seat, turned a
+  // little toward you; his head follows the camera and he gestures on the radio.
+  const drive = useMemo(() => {
+    const d = newDrive(0, 0, Math.PI - 0.45);
+    d.seated = 1; d.armL = [-0.35, 0.1]; d.armR = [-0.35, 0.1]; d.look = new THREE.Vector3();
+    return d;
+  }, []);
   useFrame(() => {
     const age = performance.now() / 1000 - comms.shownAt;
     const want = comms.line && age < 5.5 && comms.who === 'EINSTEIN' ? 1 : 0;
-    talk.current += (want - talk.current) * 0.1;
-    camera.getWorldPosition(look.current!);
+    drive.talk += (want - drive.talk) * 0.1;
+    drive.armR = drive.talk > 0.5 ? [-0.9, 0.35] : [-0.35, 0.1];
+    camera.getWorldPosition(drive.look!);
   });
   return (
     <group>
@@ -76,8 +83,8 @@ export function Cockpit() {
       <Plant />
       {/* Einstein in the co-pilot seat, turned toward you */}
       <mesh material={darkMat} position={[0.62, -0.25, -0.55]}><boxGeometry args={[0.42, 0.5, 0.42]} /></mesh>
-      <group position={[0.62, -0.35, -0.62]} rotation={[0, -0.75, 0]}>
-        <Figure who="einstein" talk={talk} lookAt={look} scale={0.42} />
+      <group position={[0.62, -0.15, -0.5]}>
+        <Npc who="einstein" drive={drive} scale={0.36} />
       </group>
     </group>
   );

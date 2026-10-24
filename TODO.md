@@ -26,8 +26,8 @@ Rule: nothing goes to the live link. Test at http://localhost:5174.
 2. ⬜ **Phone controls like a PS4 pad**: left stick moves, right stick looks/aims
 3. ⬜ **Desktop controls**: forward and back feel right
 4. ⬜ **Einstein guides you** in bubbles ("Go to the pulsar"), no rings
-5. ⬜ **Beautiful 3D space**: nebula clouds you fly through, soft dust
-6. ⬜ **Black hole glow back**, close-up glitch fixed
-7. ⬜ **Boss-style title** when you reach each phenomenon
+5. ✅ **Beautiful 3D space**: nebula clouds you fly through, soft dust
+6. ✅ **Black hole glow back**, close-up glitch fixed
+7. ✅ **Boss-style title** when you reach each phenomenon
 8. ⬜ **The journey**: pulsar → wormhole → black hole → save Newton
 9. ⬜ **Ending**: Einstein's line, then the end screen

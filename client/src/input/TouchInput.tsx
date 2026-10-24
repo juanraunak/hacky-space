@@ -5,15 +5,15 @@
 // keeps its role forever otherwise), try around setPointerCapture (threw
 // InvalidStateError live), swallow gestures, non-passive touchmove, menus.
 //
-// With a mouse, a click asks for pointer lock and a drag looks as a floor.
+// With a mouse, a click asks for pointer lock; the movement then looks or steers.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { input, isLocked, setStick, setTouchButton, touchButtons } from './input';
+import { grabPointer, input, isLocked, isTouch, setStick, setTouchButton, touchButtons } from './input';
 
 const STICK_RADIUS_PX = 60;
 const MOVE_ZONE = 0.45;
 
-interface Pointer { id: number; role: 'move' | 'look'; x0: number; y0: number; x: number; y: number }
+interface Pointer { id: number; role: 'move' | 'look'; x0: number; y0: number; x: number; y: number; t0: number; travel: number }
 
 /** A phone button that also looks when dragged (the right thumb rests on them). */
 function useLookButton(name: keyof typeof touchButtons) {
@@ -48,6 +48,13 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
   const pointers = useRef(new Map<number, Pointer>());
   const root = useRef<HTMLDivElement>(null);
   const [ring, setRing] = useState<{ x: number; y: number; nx: number; ny: number } | null>(null);
+  // On foot (play/onfoot.ts) the flight buttons go away; by the pilot seat a
+  // single SIT button appears (a tap on the right half works too).
+  const [foot, setFoot] = useState({ on: input.onFoot, seat: input.seatPrompt });
+  useEffect(() => {
+    const id = setInterval(() => setFoot(f => (f.on === input.onFoot && f.seat === input.seatPrompt ? f : { on: input.onFoot, seat: input.seatPrompt })), 200);
+    return () => clearInterval(id);
+  }, []);
 
   const setMove = useCallback((p: Pointer | null) => {
     if (!p) { setStick(0, 0, false); setRing(null); return; }
@@ -61,13 +68,14 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
   const onDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const el = root.current;
     if (!el) return;
-    // A mouse steers by its position (input.ts); only touches use this overlay.
-    if (e.pointerType === 'mouse') return;
+    // A mouse click locks the pointer (the cursor goes; Esc brings it back);
+    // its movement then looks or steers (input.ts). Only touches use the rest.
+    if (e.pointerType === 'mouse') { grabPointer(); return; }
     const mouse = false;
     const role: Pointer['role'] = !mouse && e.clientX < el.clientWidth * MOVE_ZONE ? 'move' : 'look';
     for (const p of pointers.current.values()) if (p.role === role) return; // one pointer per role
     try { el.setPointerCapture(e.pointerId); } catch { /* moves still reach the overlay */ }
-    const p = { id: e.pointerId, role, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY };
+    const p = { id: e.pointerId, role, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), travel: 0 };
     pointers.current.set(e.pointerId, p);
     if (role === 'move') setMove(p);
   }, [setMove]);
@@ -77,6 +85,7 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
     if (!p) return;
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
     p.x = e.clientX; p.y = e.clientY;
+    p.travel += Math.hypot(dx, dy);
     if (p.role === 'move') setMove(p);
     else if (!isLocked()) { input.look.x += dx; input.look.y += dy; }
   }, [setMove]);
@@ -88,6 +97,8 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
     const el = root.current;
     try { if (el?.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId); } catch { /* fine */ }
     if (p.role === 'move') setMove(null);
+    // a quick tap on the look side is "use" (sit down, on foot)
+    else if (input.onFoot && p.travel < 12 && performance.now() - p.t0 < 300) input.usePressed = true;
   }, [setMove]);
 
   useEffect(() => {
@@ -127,7 +138,12 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
           <div className="touch-nub" style={{ transform: `translate(${ring.nx}px, ${ring.ny}px)` }} />
         </div>
       )}
-      {showButtons && (
+      {foot.on && foot.seat && isTouch() && (
+        <div className="touch-buttons">
+          <button className="tb tb-thrust" {...tether}>SIT</button>
+        </div>
+      )}
+      {showButtons && !foot.on && (
         <div className="touch-buttons">
           <button className="tb tb-tether" {...tether}>TETHER</button>
           <button className="tb tb-brake" {...brake}>BRAKE</button>

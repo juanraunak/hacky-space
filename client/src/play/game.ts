@@ -21,6 +21,8 @@ import { clockRate, field, velocityFromProper, type Field } from '../relativity/
 import { beamOn } from '../relativity/hazards';
 import { einsteinTick, einsteinOnHome, sayArrival } from './einstein';
 import { audio } from '../audio/audio';
+import { airFloorMs, stepOnFoot } from './onfoot';
+import { fx } from '../cutscenes/cutscenes';
 
 export const DOCK = { x: MOTHERSHIP.x + DOCK_OFFSET.x, y: MOTHERSHIP.y + DOCK_OFFSET.y, z: MOTHERSHIP.z + DOCK_OFFSET.z };
 
@@ -173,7 +175,11 @@ export function stepGame(rawDt: number) {
   const playing = room.phase === 'playing';
   const flying = playing || room.phase === 'intro' ? playing : false;
 
+  // On foot in the ship (play/onfoot.ts): no flight, my row carries my feet.
+  const walking = (room.phase === 'intro' || playing) && stepOnFoot(rawDt, run, fx.skipped);
+
   stepPods(w, dt, playing);
+  if (walking) { sendPose(); return; }
   if (!flying) return;
 
   stepShip(w, dt);
@@ -414,6 +420,7 @@ function stepPods(w: World, dt: number, playing: boolean) {
   const ties = net.tethers();
   const run = net.run()!;
   const t = Math.max(0, game.worldS);
+  const airFloor = airFloorMs();
   for (const c of net.crew()) {
     const poi = w.pois.find(p => p.crewId === c.id);
     if (!poi) continue;
@@ -426,7 +433,7 @@ function stepPods(w: World, dt: number, playing: boolean) {
     }
     view.crew = c;
     view.tethered = tethered;
-    const sinceAir = Math.max(0, (game.nowMs - c.airMs) / 1000);
+    const sinceAir = Math.max(0, (game.nowMs - Math.max(c.airMs, airFloor)) / 1000);
 
     if (c.status === 'home') {
       view.pos = DOCK;

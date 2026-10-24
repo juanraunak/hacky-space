@@ -6,12 +6,11 @@ import * as THREE from 'three';
 import { net } from '../net';
 import { game, ship, DOCK } from '../play/game';
 import { sayExact, FINAL_LINE } from '../play/einstein';
+import { foot, footBlackout, footShot } from '../play/onfoot';
 import { mothershipFx } from '../render/craft';
 import { MOTHERSHIP, INTRO_S } from '../game/constants';
 import { bridgeLocal } from '../render/Bridge';
-import { OPEN, STAR } from '../render/Opening';
 import { add, mul, norm, sub, v, type Vec } from '../universe/bodies';
-import { audio } from '../audio/audio';
 import { view } from '../play/view';
 import { COCKPIT_EYE } from '../render/ship';
 
@@ -71,30 +70,17 @@ function firstHole() {
   return game.pods.size ? [...game.pods.values()].find(p => p.poi.kind === 'black_hole' && !p.crew.isEinstein) : undefined;
 }
 
-function introShot(t: number): Shot {
+/**
+ * The opening is on foot now (play/onfoot.ts): a first-person camera in the
+ * ship, the collapse played from the 'collapse' room event's server time, and
+ * the black screens between. Bubbles over the NPCs carry every word.
+ */
+function footSceneShot(t: number): Shot {
   resetBridge();
   mothershipFx.visible = false;
   fx.anger = 0; fx.shockwave = -1; fx.whiteout = 0;
-  const A = (x: number, y: number, z: number) => v(OPEN.x + x, OPEN.y + y, OPEN.z + z);
-  if (t > 2) once('o1', () => sayExact('Gravity is a pull, Albert. An invisible rope between all things.', 'NEWTON'));
-  if (t > 6.2) once('o2', () => sayExact('No rope, Isaac. Look. Space itself bends around the star.'));
-  if (t > 10.5) once('o3', () => sayExact('And where space bends, time runs slower.'));
-  if (t > 14) once('o4', () => { sayExact('Albert... the star!', 'NEWTON'); audio.thud(0.8); });
-  if (t > 17) once('o5', () => { audio.whoosh(); audio.thud(1); });
-  if (t > 21) once('o6', () => sayExact('Isaac!'));
-  if (t > 25.6) once('o7', () => sayExact('We have to find Newton.'));
-  // black screen at the end, then fade into flight
-  fx.blackout = t < 1 ? 1 - t : t > 23.8 && t < 28.5 ? Math.min(1, (t - 23.8) / 0.4) : t >= 28.5 ? Math.max(0, 1 - (t - 28.5) / 1.2) : 0;
-  if (t >= 25) return chaseShot(1);
-  const shake = t > 16 ? ease((t - 16) / 4) * 0.08 : 0;
-  const s = v(Math.sin(t * 37) * shake, Math.sin(t * 31) * shake, 0);
-  if (t < 14) {
-    const k = ease(t / 14);
-    return { pos: add(A(0.3, 1.7, 4 - k * 2.5), s), look: A(STAR.x * 0.2, 2.4 + k * 0.6, -40), fov: 55 - k * 6 };
-  }
-  // the collapse: pull back a little to take in the window and the hole
-  const k = ease((t - 14) / 4);
-  return { pos: add(A(0.3, 1.8, 1.5 + k * 2), s), look: A(0, 2.4, -40), fov: 49 + k * 8 };
+  fx.blackout = footBlackout(net.run());
+  return footShot(t);
 }
 
 // --- ending -----------------------------------------------------------------
@@ -172,14 +158,15 @@ export function cutsceneShot(): Shot | null {
   const run = net.run();
   if (!room || !run) { fx.active = ''; return null; }
   const now = net.now();
-  if (room.phase === 'intro' || (room.phase === 'playing' && now - run.introAt < (INTRO_S + 0.5) * 1000)) {
-    const t = (now - run.introAt) / 1000;
-    if (t < INTRO_S && !fx.skipped) { fx.active = 'intro'; fx.t = t; return introShot(t); }
-  }
   if (room.phase === 'won' || room.phase === 'lost') {
     const t = (now - run.endedAt) / 1000;
     fx.active = 'ending'; fx.t = t;
     return endingShot(t);
+  }
+  if (foot.mode === 'foot') {
+    // HUD keys off fx.active === 'intro' to stay hidden; fx.t = 0 keeps pods off-screen.
+    fx.active = 'intro'; fx.t = 0;
+    return footSceneShot(performance.now() / 1000);
   }
   if (game.arrival) {
     const t = (performance.now() - game.arrival.at) / 1000;
@@ -194,7 +181,7 @@ export function cutsceneShot(): Shot | null {
   fx.active = '';
   resetBridge();
   fx.whiteout = 0;
-  fx.blackout = 0;
+  fx.blackout = footBlackout(run); // the fade back in after taking the seat
   fx.shockwave = -1;
   fx.supernova = -1;
   fx.bigPortrait = false;

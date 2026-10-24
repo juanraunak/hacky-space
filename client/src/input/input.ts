@@ -12,6 +12,11 @@ export const input = {
   brake: false,
   tether: false, // held
   keys: new Set<string>(),
+  // on foot (play/onfoot.ts): walk vector (x right, y forward), a fresh E / tap
+  walk: { x: 0, y: 0 },
+  usePressed: false,
+  onFoot: false, // written by onfoot each frame
+  seatPrompt: false, // written by onfoot: standing by the pilot seat
 };
 
 export function consumeLook() {
@@ -56,22 +61,27 @@ function syncKeys() {
   const kx = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
   const ky = (k.has('ArrowUp') ? 1 : 0) - (k.has('ArrowDown') ? 1 : 0);
   if (!touchStick.active) {
-    if (kx || ky || !mouse.active) { input.stick.x = kx; input.stick.y = ky; }
-    else { input.stick.x = curve(mouse.x); input.stick.y = curve(mouse.y); }
+    input.walk.x = kx;
+    input.walk.y = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
   }
+  // Keys turn at a steady rate (A/D yaw, arrows pitch). The mouse never steers
+  // by where it sits on screen: only by its movement (see mousemove below).
+  if (!touchStick.active) { input.stick.x = kx; input.stick.y = ky; }
 }
 
 export const touchButtons = { thrust: false, boost: false, brake: false, tether: false };
-/** The mouse's place on screen, -1..1 from the centre (desktop steering, no clicking needed). */
-export const mouse = { x: 0, y: 0, active: false };
-const DEAD = 0.08;
-const curve = (v: number) => { const a = Math.max(0, (Math.abs(v) - DEAD) / (1 - DEAD)); return Math.sign(v) * Math.min(1, a * a * 0.6 + a * 0.6); };
 export const touchStick = { active: false };
-export const setTouchButton = (b: keyof typeof touchButtons, on: boolean) => { touchButtons[b] = on; syncKeys(); };
+export const setTouchButton = (b: keyof typeof touchButtons, on: boolean) => {
+  if (b === 'tether' && on && !touchButtons.tether) input.usePressed = true;
+  touchButtons[b] = on;
+  syncKeys();
+};
 export const setStick = (x: number, y: number, active: boolean) => {
   touchStick.active = active;
   input.stick.x = active ? x : 0;
   input.stick.y = active ? y : 0;
+  input.walk.x = active ? x : 0;
+  input.walk.y = active ? y : 0;
   if (!active) syncKeys();
 };
 
@@ -82,19 +92,24 @@ export function installDesktopInput() {
   addEventListener('keydown', e => {
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
     if (e.code in KEYMAP || e.code.startsWith('Arrow') || e.code === 'KeyA' || e.code === 'KeyD') e.preventDefault();
+    if (e.code === 'KeyE' && !e.repeat) input.usePressed = true;
     input.keys.add(e.code);
     syncKeys();
   });
   addEventListener('keyup', e => { input.keys.delete(e.code); syncKeys(); });
   addEventListener('keydown', e => { if (e.code === 'KeyV' && !e.repeat && (e.target as HTMLElement)?.tagName !== 'INPUT') toggleView(); });
   addEventListener('blur', () => { input.keys.clear(); syncKeys(); });
-  // Steering by where the mouse is: off-centre turns that way, like a stick.
+  // The mouse turns things by its movement only. A click on the game locks
+  // the pointer (input/TouchInput.tsx calls grabPointer) so the cursor goes;
+  // Esc gives it back. Locked: every movement looks around (on foot) or steers
+  // the ship (flying: up = nose up, left = turn left; game.ts applies
+  // input.look with LOOK_RATE). Unlocked (refused, an iPhone, after Esc), a
+  // drag does the same.
+  let dragging = false;
+  addEventListener('mousedown', () => { dragging = true; });
+  addEventListener('mouseup', () => { dragging = false; });
+  addEventListener('blur', () => { dragging = false; });
   document.addEventListener('mousemove', e => {
-    if (isLocked()) { input.look.x += e.movementX; input.look.y += e.movementY; return; }
-    mouse.x = (e.clientX / innerWidth) * 2 - 1;
-    mouse.y = -((e.clientY / innerHeight) * 2 - 1);
-    mouse.active = true;
-    syncKeys();
+    if (isLocked() || dragging) { input.look.x += e.movementX; input.look.y += e.movementY; }
   });
-  document.addEventListener('mouseleave', () => { mouse.active = false; syncKeys(); });
 }
