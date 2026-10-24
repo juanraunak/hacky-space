@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { route } from '../play/route';
+import { fx } from '../cutscenes/cutscenes';
 import { ship, game } from '../play/game';
 import { origin } from './origin';
 import { isTouch } from '../input/input';
@@ -102,10 +103,9 @@ export function Gates() {
     if (p) {
       const near = next?.final && Math.hypot(next.p.x - ship.pos.x, next.p.y - ship.pos.y, next.p.z - ship.pos.z) < 60;
       const key = isTouch() ? 'TETHER' : 'E';
-      let text = '';
-      if (near && route.target.kind === 'pod') text = game.tetherHold > 0 ? `RESCUING ${route.target.name}…` : `HOLD ${key} TO RESCUE ${route.target.name}`;
-      else if (near && route.target.kind === 'home') text = 'FLY INTO THE RING TO BRING THEM HOME';
-      else if (next) text = route.next === 0 && route.gates.length > 1 ? `FLY THROUGH THE RINGS TO ${route.target.name}` : '';
+      // the only text on screen: the rescue note
+      void key; void near;
+      const text = fx.active || !route.gates.length ? '' : route.target.kind === 'pod' ? `RESCUE ${route.target.name}` : 'BRING THEM HOME';
       if (p.textContent !== text) p.textContent = text;
       p.style.opacity = text ? '1' : '0';
       p.style.setProperty('--hold', String(game.tetherHold));

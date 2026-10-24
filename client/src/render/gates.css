@@ -1,6 +1,6 @@
 .gate-prompt {
-  position: fixed; left: 50%; top: 62%; transform: translateX(-50%); z-index: 3; pointer-events: none;
-  font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.14em; font-size: clamp(14px, 2.6vw, 20px);
+  position: fixed; left: 50%; top: max(16px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 3; pointer-events: none;
+  font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.14em; font-size: clamp(12px, 1.8vw, 15px); opacity: 0.85;
   color: #fff; text-shadow: 0 0 16px rgba(255, 255, 255, 0.5); transition: opacity 0.3s; white-space: nowrap;
   padding: 8px 16px; border-radius: 999px; background: rgba(0, 0, 0, 0.35);
   background-image: linear-gradient(90deg, rgba(255,255,255,0.22) calc(var(--hold, 0) * 100%), transparent 0);
@@ -23,3 +23,6 @@
 .gate-howto b { letter-spacing: 0.16em; font-size: 1.1em; color: #fff; margin-bottom: 2px; }
 .gate-howto i { font-style: normal; font-weight: 700; }
 .gate-howto i.c { color: #5fe8ff; } .gate-howto i.g { color: #ffd34a; } .gate-howto i.h { color: #6dff9e; }
+
+/* Juan: no text on screen except the objective. */
+.comms, .bubble, .hint, .gate-howto, .status, .pull, .escape { display: none !important; }

@@ -24,7 +24,7 @@ export const RUNAWAY_SPEED = 28; // 0.7 c at launch; it slows over time (client)
 export const COLORS = ['#ff6b6b', '#4dabf7', '#ffd43b', '#69db7c', '#da77f2', '#ff922b'];
 
 export const CREW_NAMES = [
-  'Kai', 'Mia', 'Jay', 'Parth', 'Ninjago', 'Zara', 'Leo', 'Ana', 'Sam', 'Rio', 'Tess', 'Omar',
+  'Newton', 'Mia', 'Jay', 'Parth', 'Ninjago', 'Zara', 'Leo', 'Ana', 'Sam', 'Rio', 'Tess', 'Omar',
 ];
 
 export const OTHER_POIS = ['pulsar', 'wormhole'];
@@ -133,22 +133,6 @@ export function planCrew(seed: number, pilots: number): CrewPlan[] {
   });
   plans.sort((a, b) => a.slot - b.slot);
 
-  // Einstein: the system's biggest black hole, past the furthest site, in a
-  // direction of its own. An anchor dive once there are two pilots.
-  const az = spin + n * golden + golden / 2;
-  const el = (rand() * 2 - 1) * 0.2;
-  const d = far * 1.15;
-  plans.push({
-    slot: n,
-    name: 'Einstein',
-    poi: 'black_hole',
-    two_ship: p >= 2,
-    x: Math.cos(el) * Math.cos(az) * d,
-    y: Math.sin(el) * d,
-    z: Math.cos(el) * Math.sin(az) * d,
-    vx: 0, vy: 0, vz: 0,
-    is_einstein: true,
-  });
   return plans;
 }
 

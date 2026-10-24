@@ -9,7 +9,7 @@ import { sayExact, FINAL_LINE } from '../play/einstein';
 import { mothershipFx } from '../render/craft';
 import { MOTHERSHIP, INTRO_S } from '../game/constants';
 import { bridgeLocal } from '../render/Bridge';
-import { OPEN } from '../render/Opening';
+import { OPEN, STAR } from '../render/Opening';
 import { add, mul, norm, sub, v, type Vec } from '../universe/bodies';
 import { audio } from '../audio/audio';
 import { view } from '../play/view';
@@ -38,6 +38,7 @@ export const fx = {
   shake: 0,
   waveId: -1,
   forceCockpit: false,
+  blackout: 0,
 };
 
 function resetBridge() {
@@ -75,20 +76,25 @@ function introShot(t: number): Shot {
   mothershipFx.visible = false;
   fx.anger = 0; fx.shockwave = -1; fx.whiteout = 0;
   const A = (x: number, y: number, z: number) => v(OPEN.x + x, OPEN.y + y, OPEN.z + z);
-  if (t > 3.5) once('o1', () => sayExact('Gravity is a pull, Albert. An invisible rope between all things.', 'NEWTON'));
-  if (t > 8) once('o2', () => sayExact('No rope, Isaac. Space itself bends. Watch.'));
-  if (t > 12.5) once('o3', () => sayExact('See? The marble is not pulled. It just follows the curve.'));
-  if (t > 15.5) once('o4', () => sayExact('And down in the dip... time itself runs slower.'));
-  if (t > 18.8) once('o5', () => { sayExact('Albert... it is getting heavier!', 'NEWTON'); audio.thud(0.7); });
-  if (t > 20.8) once('o6', () => { sayExact('Isaac! Hold on!'); audio.whoosh(); });
-  if (t > 24.3) once('o7', () => sayExact('It took him. Pilot, we are going after Isaac. I will ride with you.'));
-  fx.forceCockpit = t >= 24 && t < 28.5;
-  if (t < 4) { const k = ease(t / 4); return { pos: A(0, 7 - k * 4, 62 - k * 36), look: A(0, -3, -4), fov: 50 }; }
-  if (t < 14.5) { const k = ease((t - 4) / 10.5); return { pos: A(2 - k * 4, 1.4, 15 - k * 2), look: A(0, -2.6 - k * 2, -1 - k * 6), fov: 46 }; }
-  if (t < 19) return { pos: A(10, 5, 10), look: A(-3, -6, -8), fov: 52 };
-  if (t < 24) { const k = ease((t - 19) / 5); return { pos: A(-4 + k * 4, 10 - k * 2, 28 - k * 4), look: A(0, -7, -11), fov: 52 }; }
-  if (t < 28.5) return cockpitShot();
-  return chaseShot(1);
+  if (t > 2) once('o1', () => sayExact('Gravity is a pull, Albert. An invisible rope between all things.', 'NEWTON'));
+  if (t > 6.2) once('o2', () => sayExact('No rope, Isaac. Look. Space itself bends around the star.'));
+  if (t > 10.5) once('o3', () => sayExact('And where space bends, time runs slower.'));
+  if (t > 14) once('o4', () => { sayExact('Albert... the star!', 'NEWTON'); audio.thud(0.8); });
+  if (t > 17) once('o5', () => { audio.whoosh(); audio.thud(1); });
+  if (t > 21) once('o6', () => sayExact('Isaac!'));
+  if (t > 25.6) once('o7', () => sayExact('We have to find Newton.'));
+  // black screen at the end, then fade into flight
+  fx.blackout = t < 1 ? 1 - t : t > 23.8 && t < 28.5 ? Math.min(1, (t - 23.8) / 0.4) : t >= 28.5 ? Math.max(0, 1 - (t - 28.5) / 1.2) : 0;
+  if (t >= 25) return chaseShot(1);
+  const shake = t > 16 ? ease((t - 16) / 4) * 0.08 : 0;
+  const s = v(Math.sin(t * 37) * shake, Math.sin(t * 31) * shake, 0);
+  if (t < 14) {
+    const k = ease(t / 14);
+    return { pos: add(A(0.3, 1.7, 4 - k * 2.5), s), look: A(STAR.x * 0.2, 2.4 + k * 0.6, -40), fov: 55 - k * 6 };
+  }
+  // the collapse: pull back a little to take in the window and the hole
+  const k = ease((t - 14) / 4);
+  return { pos: add(A(0.3, 1.8, 1.5 + k * 2), s), look: A(0, 2.4, -40), fov: 49 + k * 8 };
 }
 
 // --- ending -----------------------------------------------------------------
@@ -188,6 +194,7 @@ export function cutsceneShot(): Shot | null {
   fx.active = '';
   resetBridge();
   fx.whiteout = 0;
+  fx.blackout = 0;
   fx.shockwave = -1;
   fx.supernova = -1;
   fx.bigPortrait = false;

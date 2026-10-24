@@ -140,6 +140,7 @@ function Arrows() {
   const flash = useRef<HTMLDivElement>(null);
   const danger = useRef<HTMLDivElement>(null);
   const white = useRef<HTMLDivElement>(null);
+  const black = useRef<HTMLDivElement>(null);
   const pull = useRef<HTMLDivElement>(null);
   const esc = useRef<HTMLDivElement>(null);
   const dialCanvas = useRef<HTMLCanvasElement>(null);
@@ -186,6 +187,7 @@ function Arrows() {
       }
       if (flash.current) flash.current.style.opacity = String(Math.max(beam * 0.7, ship.hitFlash * 0.35));
       if (white.current) white.current.style.opacity = String(Math.max(fx.whiteout, ship.whiteout));
+      if (black.current) black.current.style.opacity = String(fx.blackout);
 
       // Pull guide: which way you are being dragged, and which way breaks free.
       const pullEl = pull.current, escEl = esc.current;
@@ -242,6 +244,7 @@ function Arrows() {
       <div ref={esc} className="escape"><span>➜</span><em>steer here + boost</em></div>
       <canvas ref={dialCanvas} className={`dials ${view.mode === 'cockpit' || fx.active ? 'hidden' : ''}`} width={520} height={210} />
       <div ref={white} className="whiteout" />
+      <div ref={black} className="blackout" />
     </>
   );
 }

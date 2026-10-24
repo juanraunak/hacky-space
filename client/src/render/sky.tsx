@@ -68,34 +68,52 @@ vec3 starLayer(vec3 d, float scale, float density, float bright) {
   return col;
 }
 
+// James Webb style: warm amber dust cliffs with bright rims, blue-teal gas
+// above them, deep black gaps, a dusty Milky Way, tiny distant galaxies.
+vec3 webbNebula(vec3 d) {
+  vec3 q = d * 1.6 + uSeed * 0.37;
+  // where the big cloud sits (about a third of the sky)
+  float mask = smoothstep(0.42, 0.72, fbm(d * 0.9 + uSeed * 0.11, 3));
+  vec3 warp = vec3(fbm(q, 4), fbm(q + 7.7, 4), fbm(q + 3.1, 4));
+  float dust = fbm(q * 1.8 + warp * 2.2, 6);              // the cliffs
+  float rim = smoothstep(0.52, 0.6, dust) * (1.0 - smoothstep(0.6, 0.75, dust)); // lit edges
+  float body = smoothstep(0.45, 0.8, dust);
+  float gas = pow(fbm(q * 1.2 + warp * 1.4 + 11.0, 5), 2.2); // the blue glow
+  vec3 amber = mix(vec3(0.18, 0.07, 0.02), vec3(0.95, 0.52, 0.2), body);
+  vec3 cream = vec3(1.0, 0.86, 0.62);
+  vec3 blue = mix(vec3(0.05, 0.12, 0.3), vec3(0.32, 0.62, 0.95), gas);
+  vec3 c = blue * gas * 0.55 * (1.0 - body);
+  c += amber * body * 0.55 + cream * rim * 0.9;
+  // dark dust lanes cut through it
+  c *= 1.0 - 0.75 * smoothstep(0.55, 0.85, ridged(q * 2.6 + warp, 5));
+  return c * mask;
+}
+
 void main() {
   vec3 d = normalize(vDir);
-  vec3 col = vec3(0.0);
+  vec3 col = vec3(0.004, 0.005, 0.012); // not pure black: a faint deep blue
 
-  // Galactic band: a soft disc of unresolved stars, with dust lanes.
+  // Milky Way band: warm, with brown-black dust lanes.
   float g = dot(d, uGal);
-  float band = exp(-g * g / 0.035);
+  float band = exp(-g * g / 0.02);
   float clump = fbm(d * 6.0 + uSeed * 0.1, 6);
-  float dust = ridged(d * 9.0 + uSeed * 0.2, 5);
-  vec3 bandCol = mix(vec3(0.55, 0.5, 0.45), vec3(0.75, 0.62, 0.48), clump);
-  float tauDust = smoothstep(0.55, 0.95, dust) * 2.2 * band;
-  col += bandCol * band * (0.02 + 0.045 * clump) * exp(-tauDust);
+  float lanes = smoothstep(0.5, 0.9, ridged(d * 9.0 + uSeed * 0.2, 5));
+  col += mix(vec3(0.85, 0.72, 0.55), vec3(1.0, 0.9, 0.75), clump) * band * (0.05 + 0.12 * clump) * (1.0 - 0.6 * lanes);
 
-  // Nebula: H-alpha red billowing outside, OIII teal tighter inside, two
-  // independent noise fields, low saturation in the bright cores.
-  vec3 q = d * 2.2 + uSeed * 0.37;
-  vec3 warp = vec3(fbm(q, 4), fbm(q + 7.7, 4), fbm(q + 3.1, 4));
-  float ha = pow(fbm(q * 1.4 + warp * 1.8, 6), 3.2) * 2.4;
-  float o3 = pow(fbm(q * 2.3 + warp * 2.6 + 19.0, 6), 4.5) * 3.0;
-  vec3 haCol = vec3(1.0, 0.227, 0.18) * mix(1.0, 0.8, uHue);
-  vec3 o3Col = vec3(0.184, 0.827, 0.784);
-  vec3 neb = haCol * ha * 0.22 + o3Col * o3 * 0.14;
-  float coreL = dot(neb, vec3(0.3, 0.59, 0.11));
-  neb = mix(neb, vec3(coreL), smoothstep(0.08, 0.3, coreL) * 0.5);
-  neb *= exp(-smoothstep(0.5, 0.9, ridged(d * 4.0 + uSeed * 0.5, 5)) * 1.5);
-  col += neb * 0.45;
+  col += webbNebula(d) * mix(1.0, 0.8, uHue);
 
-  // Stars: many faint, a few bright. Denser in the band.
+  // tiny far galaxies: soft little smudges, warm and blue
+  vec3 gp = d * 90.0 + uSeed;
+  vec3 gc = floor(gp);
+  float gh = h31(gc);
+  if (gh > 0.985) {
+    vec3 go = gc + vec3(h31(gc + 1.1), h31(gc + 2.2), h31(gc + 3.3));
+    float gd = length(gp - go);
+    float shape = exp(-gd * gd * 30.0);
+    col += mix(vec3(1.0, 0.75, 0.5), vec3(0.6, 0.75, 1.0), h31(gc + 5.0)) * shape * 0.25;
+  }
+
+  // Stars: many faint, a few bright, denser in the band.
   float dens = mix(0.0, 0.035, band);
   col += starLayer(d, 420.0, 0.965 - dens, 1.2);
   col += starLayer(d, 180.0, 0.985, 2.5);

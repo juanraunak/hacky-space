@@ -129,3 +129,5 @@ input { -webkit-user-select: text; user-select: text; touch-action: auto; }
 .comms { padding: 10px 18px; }
 .comms-who { color: #9fd8ff; }
 .comms.newton .comms-who { color: #ffcf8a; }
+
+.blackout { position: absolute; inset: 0; background: #000; opacity: 0; }

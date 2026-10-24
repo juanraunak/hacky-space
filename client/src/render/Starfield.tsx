@@ -23,6 +23,8 @@ uniform vec3 uBeta; // ship velocity / c, world axes
 uniform float uFx;
 uniform float uDpr;
 varying vec3 vCol;
+varying float vSpike;
+varying float vCore;
 ${BLACKBODY_GLSL}
 void main() {
   vec4 wp = modelMatrix * vec4(position, 1.0);
@@ -53,20 +55,38 @@ void main() {
   // flux from magnitude: F = 10^(-0.4 m), relative to a reference
   float flux = pow(10.0, -0.4 * aMag) * boost * (2.0e8 / (d * d + 1.0e6));
   float px = clamp(sqrt(flux) * 2.2, 1.0, 3.0);
-  gl_PointSize = px * uDpr;
   // energy that does not fit in the sprite goes into luminance above 1
   float energy = flux / (px * px * 0.25);
-  vCol = blackbody(temp) * clamp(energy, 0.05, 40.0);
+  // the brightest few get James Webb's six-point diffraction spikes
+  vSpike = smoothstep(6.0, 20.0, energy);
+  float size = mix(px, 34.0, vSpike);
+  vCore = px / size;
+  gl_PointSize = size * uDpr;
+  vec3 tint = mix(vec3(1.0), blackbody(temp), 0.5); // desaturated toward white
+  vCol = tint * clamp(energy, 0.05, 40.0);
 }
 `;
 
 const FRAG = /* glsl */ `
 varying vec3 vCol;
+varying float vSpike;
+varying float vCore;
 void main() {
   vec2 p = gl_PointCoord * 2.0 - 1.0;
-  float r2 = dot(p, p);
-  if (r2 > 1.0) discard;
-  gl_FragColor = vec4(vCol * exp(-r2 * 3.0), 1.0);
+  float r = length(p);
+  if (r > 1.0) discard;
+  float core = exp(-(r * r) / max(1e-4, vCore * vCore) * 3.0);
+  float spikes = 0.0;
+  if (vSpike > 0.0) {
+    for (int i = 0; i < 3; i++) {
+      float a = float(i) * 1.0471976 + 1.5707963;
+      vec2 dir = vec2(cos(a), sin(a));
+      float perp = abs(dot(p, vec2(-dir.y, dir.x)));
+      spikes += exp(-perp * 90.0) * pow(1.0 - r, 2.0);
+    }
+    spikes += 0.4 * exp(-abs(p.y) * 120.0) * pow(1.0 - r, 3.0); // the faint short horizontal pair
+  }
+  gl_FragColor = vec4(vCol * (core + spikes * vSpike * 0.35), 1.0);
 }
 `;
 

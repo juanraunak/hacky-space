@@ -78,6 +78,7 @@ export function say(key: string, force = false) {
   if (options.length === 0) return;
   const line = options[Math.floor(Math.random() * options.length)];
   comms.used.add(line);
+  speak(line, 'EINSTEIN');
   comms.who = 'EINSTEIN';
   comms.line = line;
   comms.shownAt = now;
@@ -85,7 +86,29 @@ export function say(key: string, force = false) {
 }
 
 /** Show a specific line (cutscenes). */
+// Real voices, no text: the browser's speech synthesis, a different voice
+// for each of them.
+function speak(line: string, who: string) {
+  try {
+    const s = window.speechSynthesis;
+    if (!s) return;
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(line);
+    const voices = s.getVoices().filter(v => v.lang.startsWith('en'));
+    const pick = (re: RegExp) => voices.find(v => re.test(v.name));
+    if (who === 'NEWTON') {
+      u.voice = pick(/Daniel|Arthur|Oliver|UK|British/i) ?? voices[0] ?? null;
+      u.pitch = 0.85; u.rate = 0.95;
+    } else {
+      u.voice = pick(/Fred|Ralph|Albert|Alex|Aaron|David/i) ?? voices[1] ?? voices[0] ?? null;
+      u.pitch = 0.75; u.rate = 0.9;
+    }
+    s.speak(u);
+  } catch { /* no speech here */ }
+}
+
 export function sayExact(line: string, who = 'EINSTEIN') {
+  speak(line, who);
   comms.who = who;
   comms.line = line;
   comms.shownAt = performance.now() / 1000;
