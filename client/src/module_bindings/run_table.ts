@@ -20,4 +20,5 @@ export default __t.row({
   crewCount: __t.u32().name("crew_count"),
   result: __t.string(),
   endedAt: __t.timestamp().name("ended_at"),
+  podAirS: __t.u32().name("pod_air_s"),
 });

@@ -1,0 +1,44 @@
+# Deploys the client to the Azure Static Web App "hacky-space" (resource group
+# hacky-space-rg) on every push to main. The deploy token lives in the repo
+# secret AZURE_STATIC_WEB_APPS_API_TOKEN. The SpacetimeDB module is never
+# deployed by CI: publish it by hand with `npm run pub` first.
+#
+# The site never waits on the typecheck: a red `check` still shows on the commit.
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+        working-directory: client
+      - run: npx vite build && cp staticwebapp.config.json dist/
+        working-directory: client
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: client/dist
+          skip_app_build: true
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+        working-directory: client
+      - run: npx tsc -p .
+        working-directory: client

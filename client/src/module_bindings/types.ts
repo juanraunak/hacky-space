@@ -28,6 +28,13 @@ export const Crew = __t.object("Crew", {
   tau: __t.f64(),
   homeAt: __t.timestamp(),
   pilotTau: __t.f64(),
+  isEinstein: __t.bool(),
+  air: __t.f32(),
+  airMs: __t.f64(),
+  px: __t.f64(),
+  py: __t.f64(),
+  pz: __t.f64(),
+  moved: __t.bool(),
 });
 export type Crew = __Infer<typeof Crew>;
 
@@ -68,6 +75,7 @@ export const Run = __t.object("Run", {
   crewCount: __t.u32(),
   result: __t.string(),
   endedAt: __t.timestamp(),
+  podAirS: __t.u32(),
 });
 export type Run = __Infer<typeof Run>;
 

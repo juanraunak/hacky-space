@@ -3,6 +3,7 @@ import { net, useNet } from './net';
 import { goToRoom, useRoomCode } from './routing';
 import { Lobby } from './lobby/Lobby';
 import { DebugTables } from './lobby/DebugTables';
+import { GameScreen } from './play/GameScreen';
 
 const NAME_KEY = 'hackyspace.name';
 const readName = () => { try { return localStorage.getItem(NAME_KEY) ?? ''; } catch { return ''; } };
@@ -59,16 +60,9 @@ export function App() {
   }
 
   // Every client renders purely from room.phase.
-  // TODO(game): mount the game canvas for intro | playing | won | lost.
   return (
     <>
-      {room.phase === 'lobby' ? <Lobby /> : (
-        <main className="screen">
-          <h2>Phase: {room.phase}</h2>
-          <p className="dim">The game goes here.</p>
-          {net.isHost() && <button onClick={() => net.backToLobby()}>Back to lobby</button>}
-        </main>
-      )}
+      {room.phase === 'lobby' ? <Lobby /> : <GameScreen />}
       {new URLSearchParams(location.search).has('debug') && <DebugTables />}
     </>
   );

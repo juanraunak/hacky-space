@@ -39,18 +39,18 @@ import BeginPlayReducer from "./begin_play_reducer";
 import ClaimHostReducer from "./claim_host_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import DockCrewReducer from "./dock_crew_reducer";
-import DropTethersReducer from "./drop_tethers_reducer";
 import FireEventReducer from "./fire_event_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
-import PodLostReducer from "./pod_lost_reducer";
+import LoseCrewReducer from "./lose_crew_reducer";
 import ReleaseTetherReducer from "./release_tether_reducer";
+import ReportPodReducer from "./report_pod_reducer";
+import RespawnReducer from "./respawn_reducer";
 import SetNameReducer from "./set_name_reducer";
 import StartRunReducer from "./start_run_reducer";
 import SyncShipReducer from "./sync_ship_reducer";
 import TetherCrewReducer from "./tether_crew_reducer";
 import TetherShipReducer from "./tether_ship_reducer";
-import TimeUpReducer from "./time_up_reducer";
 
 // Import all procedure arg schemas
 
@@ -168,18 +168,18 @@ const reducersSchema = __reducers(
   __reducerSchema("claim_host", ClaimHostReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("dock_crew", DockCrewReducer),
-  __reducerSchema("drop_tethers", DropTethersReducer),
   __reducerSchema("fire_event", FireEventReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
-  __reducerSchema("pod_lost", PodLostReducer),
+  __reducerSchema("lose_crew", LoseCrewReducer),
   __reducerSchema("release_tether", ReleaseTetherReducer),
+  __reducerSchema("report_pod", ReportPodReducer),
+  __reducerSchema("respawn", RespawnReducer),
   __reducerSchema("set_name", SetNameReducer),
   __reducerSchema("start_run", StartRunReducer),
   __reducerSchema("sync_ship", SyncShipReducer),
   __reducerSchema("tether_crew", TetherCrewReducer),
   __reducerSchema("tether_ship", TetherShipReducer),
-  __reducerSchema("time_up", TimeUpReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

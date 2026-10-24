@@ -28,4 +28,11 @@ export default __t.row({
   tau: __t.f64(),
   homeAt: __t.timestamp().name("home_at"),
   pilotTau: __t.f64().name("pilot_tau"),
+  isEinstein: __t.bool().name("is_einstein"),
+  air: __t.f32(),
+  airMs: __t.f64().name("air_ms"),
+  px: __t.f64(),
+  py: __t.f64(),
+  pz: __t.f64(),
+  moved: __t.bool(),
 });

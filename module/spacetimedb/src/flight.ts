@@ -2,7 +2,7 @@ import { t, SenderError } from 'spacetimedb/server';
 import spacetimedb from './schema';
 import type { Ctx } from './schema';
 import { C, MOTHERSHIP } from './rules';
-import { checkWin, cutTethers } from './helpers';
+import { checkEnd, cutPod, cutTethers, nowMs, spawnShip } from './helpers';
 
 const LIMIT = 1e8;
 const fin = (v: number, lo = -LIMIT, hi = LIMIT) => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : 0);
@@ -36,7 +36,7 @@ export const syncShip = spacetimedb.reducer(
       qx: fin(a.qx, -1, 1), qy: fin(a.qy, -1, 1), qz: fin(a.qz, -1, 1), qw: fin(a.qw, -1, 1),
       vx: fin(a.vx, -C, C), vy: fin(a.vy, -C, C), vz: fin(a.vz, -C, C),
       tau: fin(a.tau, 0, 1e7),
-      oxygen: fin(a.oxygen, 0, 100),
+      oxygen: fin(a.oxygen, 0, 1000),
       hull: Math.min(3, a.hull),
       status,
       updated_at: ctx.timestamp,
@@ -44,12 +44,24 @@ export const syncShip = spacetimedb.reducer(
   }
 );
 
-/** Clip a tether to a lost pod. A two-ship pod takes two different pilots. */
-export const tetherCrew = spacetimedb.reducer({ crewId: t.u32() }, (ctx, { crewId }) => {
+/** Back at the mothership after a horizon or a solo blackout. */
+export const respawn = spacetimedb.reducer(ctx => {
+  const player = me(ctx);
+  cutTethers(ctx, player.room_code);
+  const ship = ctx.db.ship.identity.find(ctx.sender);
+  const tau = ship?.tau ?? 0;
+  spawnShip(ctx, player.room_code);
+  const fresh = ctx.db.ship.identity.find(ctx.sender);
+  if (fresh) ctx.db.ship.identity.update({ ...fresh, tau });
+});
+
+/** Clip a tether to a waiting pod. A two-ship pod takes two different pilots. */
+export const tetherCrew = spacetimedb.reducer({ crewId: t.u32(), air: t.f32() }, (ctx, { crewId, air }) => {
   const player = me(ctx);
   const code = player.room_code;
   const crew = ctx.db.crew.id.find(crewId);
-  if (!crew || crew.room_code !== code || crew.status === 'home') return;
+  if (!crew || crew.room_code !== code) return;
+  if (crew.status !== 'waiting' && crew.status !== 'towed') return;
   const ties = [...ctx.db.tether.room_code.filter(code)];
   if (ties.some(tie => tie.owner.isEqual(ctx.sender))) return; // one tow at a time
   const onPod = ties.filter(tie => tie.target_kind === 'crew' && tie.target_crew === crewId);
@@ -63,8 +75,27 @@ export const tetherCrew = spacetimedb.reducer({ crewId: t.u32() }, (ctx, { crewI
     target_ship: ctx.sender,
     since: ctx.timestamp,
   });
-  if (crew.status === 'lost') ctx.db.crew.id.update({ ...crew, status: 'towed', towed_by: ctx.sender });
+  if (crew.status === 'waiting') {
+    ctx.db.crew.id.update({ ...crew, status: 'towed', towed_by: ctx.sender, air: fin(air, 0, 1000), air_ms: nowMs(ctx) });
+  }
 });
+
+/**
+ * The lead tower reports the pod's place and air a few times a second, so
+ * every screen draws it in the same spot and a released pod stays put.
+ */
+export const reportPod = spacetimedb.reducer(
+  { crewId: t.u32(), x: t.f64(), y: t.f64(), z: t.f64(), air: t.f32() },
+  (ctx, a) => {
+    const crew = ctx.db.crew.id.find(a.crewId);
+    if (!crew || crew.status !== 'towed' || !crew.towed_by.isEqual(ctx.sender)) return;
+    ctx.db.crew.id.update({
+      ...crew,
+      px: fin(a.x), py: fin(a.y), pz: fin(a.z), moved: true,
+      air: fin(a.air, 0, 1000), air_ms: nowMs(ctx),
+    });
+  }
+);
 
 /** Clip a tether to a teammate whose ship went dark. */
 export const tetherShip = spacetimedb.reducer({ target: t.identity() }, (ctx, { target }) => {
@@ -87,34 +118,19 @@ export const tetherShip = spacetimedb.reducer({ target: t.identity() }, (ctx, { 
   });
 });
 
-/** Let go of whatever you are towing. */
+/** Let go of whatever you are towing. A pod stays where it is and keeps waiting. */
 export const releaseTether = spacetimedb.reducer(ctx => {
   const player = me(ctx);
-  const code = player.room_code;
-  for (const tie of [...ctx.db.tether.room_code.filter(code)]) {
-    if (!tie.owner.isEqual(ctx.sender)) continue;
-    ctx.db.tether.id.delete(tie.id);
-    if (tie.target_kind === 'crew') {
-      const crew = ctx.db.crew.id.find(tie.target_crew);
-      const still = [...ctx.db.tether.room_code.filter(code)].find(
-        o => o.target_kind === 'crew' && o.target_crew === tie.target_crew
-      );
-      if (crew && crew.status === 'towed') {
-        if (still) ctx.db.crew.id.update({ ...crew, towed_by: still.owner });
-        else ctx.db.crew.id.update({ ...crew, status: 'lost' });
-      }
-    }
-  }
+  cutTethers(ctx, player.room_code);
 });
 
 /**
  * Deliver a towed pod into the dock ring. The pod's own clock (tau) and the
- * pilot's clock are kept for the reunion bubble on every screen. x,y,z of the
- * crew row becomes where it was dropped, so a lost pod does not snap back.
+ * pilot's clock are kept for the reunion bubble on every screen.
  */
 export const dockCrew = spacetimedb.reducer(
-  { crewId: t.u32(), crewTau: t.f64(), pilotTau: t.f64() },
-  (ctx, { crewId, crewTau, pilotTau }) => {
+  { crewId: t.u32(), crewTau: t.f64(), pilotTau: t.f64(), air: t.f32() },
+  (ctx, { crewId, crewTau, pilotTau, air }) => {
     const player = me(ctx);
     const code = player.room_code;
     const room = ctx.db.room.code.find(code);
@@ -126,39 +142,45 @@ export const dockCrew = spacetimedb.reducer(
     );
     if (!ties.some(tie => tie.owner.isEqual(ctx.sender))) return;
     if (crew.two_ship && ties.length < 2) return;
-    for (const tie of ties) ctx.db.tether.id.delete(tie.id);
+    cutPod(ctx, code, crewId);
     ctx.db.crew.id.update({
       ...crew,
       status: 'home',
       towed_by: ctx.sender,
       tau: fin(crewTau, 0, 1e7),
       pilot_tau: fin(pilotTau, 0, 1e7),
+      air: fin(air, 0, 1000),
+      air_ms: nowMs(ctx),
       home_at: ctx.timestamp,
-      x: MOTHERSHIP.x, y: MOTHERSHIP.y, z: MOTHERSHIP.z,
+      px: MOTHERSHIP.x, py: MOTHERSHIP.y, pz: MOTHERSHIP.z, moved: true,
       vx: 0, vy: 0, vz: 0,
     });
-    checkWin(ctx, code);
+    checkEnd(ctx, code);
   }
 );
 
 /**
- * A pod that fell into a horizon with its pilot. It is pulled back to its
- * rescue site so the run can still be won, at the cost of the whole trip.
+ * A crewmate is lost: their pod's air ran out, or it fell into a horizon.
+ * Any client may call it; the first call wins and repeats are no-ops. The air
+ * math is deterministic on every client, so the server trusts the caller.
  */
-export const podLost = spacetimedb.reducer({ crewId: t.u32() }, (ctx, { crewId }) => {
+export const loseCrew = spacetimedb.reducer({ crewId: t.u32(), x: t.f64(), y: t.f64(), z: t.f64() }, (ctx, a) => {
   const player = me(ctx);
-  const crew = ctx.db.crew.id.find(crewId);
-  if (!crew || crew.room_code !== player.room_code || crew.status === 'home') return;
-  for (const tie of [...ctx.db.tether.room_code.filter(player.room_code)]) {
-    if (tie.target_kind === 'crew' && tie.target_crew === crewId) ctx.db.tether.id.delete(tie.id);
-  }
-  ctx.db.crew.id.update({ ...crew, status: 'lost' });
-});
-
-/** Your ship crossed a horizon or you respawned: cut every tie to you. */
-export const dropTethers = spacetimedb.reducer(ctx => {
-  const player = me(ctx);
-  cutTethers(ctx, player.room_code);
+  const code = player.room_code;
+  const room = ctx.db.room.code.find(code);
+  if (!room || room.phase !== 'playing') return;
+  const crew = ctx.db.crew.id.find(a.crewId);
+  if (!crew || crew.room_code !== code || crew.status === 'home' || crew.status === 'lost') return;
+  cutPod(ctx, code, a.crewId);
+  ctx.db.crew.id.update({
+    ...crew,
+    status: 'lost',
+    air: 0,
+    air_ms: nowMs(ctx),
+    px: fin(a.x), py: fin(a.y), pz: fin(a.z), moved: true,
+    vx: 0, vy: 0, vz: 0,
+  });
+  checkEnd(ctx, code);
 });
 
 /** One-shot shared moments, inserted at most once per room and name. */

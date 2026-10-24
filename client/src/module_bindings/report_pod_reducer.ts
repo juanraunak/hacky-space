@@ -10,4 +10,10 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {};
+export default {
+  crewId: __t.u32(),
+  x: __t.f64(),
+  y: __t.f64(),
+  z: __t.f64(),
+  air: __t.f32(),
+};

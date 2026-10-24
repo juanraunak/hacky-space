@@ -14,4 +14,5 @@ export default {
   crewId: __t.u32(),
   crewTau: __t.f64(),
   pilotTau: __t.f64(),
+  air: __t.f32(),
 };

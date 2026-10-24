@@ -12,4 +12,5 @@ import {
 
 export default {
   crewId: __t.u32(),
+  air: __t.f32(),
 };

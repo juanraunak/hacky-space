@@ -33,12 +33,13 @@ export interface Ship {
 }
 export interface Run {
   roomCode: string; seed: number; introAt: number; startedAt: number; countdownS: number;
-  pilots: number; crewCount: number; result: '' | 'won' | 'lost'; endedAt: number;
+  pilots: number; crewCount: number; result: '' | 'won' | 'lost'; endedAt: number; podAirS: number;
 }
 export interface Crew {
   id: number; roomCode: string; slot: number; name: string; poi: string; twoShip: boolean;
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
-  status: 'lost' | 'towed' | 'home'; towedBy: string; tau: number; homeAt: number; pilotTau: number;
+  status: 'waiting' | 'towed' | 'home' | 'lost'; towedBy: string; tau: number; homeAt: number; pilotTau: number;
+  isEinstein: boolean; air: number; airMs: number; px: number; py: number; pz: number; moved: boolean;
 }
 export interface Tether {
   id: string; roomCode: string; owner: string; targetKind: 'crew' | 'ship';
@@ -77,12 +78,13 @@ const toShip = (r: any): Ship => ({
 });
 const toRun = (r: any): Run => ({
   roomCode: r.roomCode, seed: r.seed, introAt: ms(r.introAt), startedAt: ms(r.startedAt),
-  countdownS: r.countdownS, pilots: r.pilots, crewCount: r.crewCount, result: r.result, endedAt: ms(r.endedAt),
+  countdownS: r.countdownS, pilots: r.pilots, crewCount: r.crewCount, result: r.result, endedAt: ms(r.endedAt), podAirS: r.podAirS,
 });
 const toCrew = (r: any): Crew => ({
   id: r.id, roomCode: r.roomCode, slot: r.slot, name: r.name, poi: r.poi, twoShip: r.twoShip,
   x: r.x, y: r.y, z: r.z, vx: r.vx, vy: r.vy, vz: r.vz,
   status: r.status, towedBy: hex(r.towedBy), tau: r.tau, homeAt: ms(r.homeAt), pilotTau: r.pilotTau,
+  isEinstein: r.isEinstein, air: r.air, airMs: r.airMs, px: r.px, py: r.py, pz: r.pz, moved: r.moved,
 });
 const toTether = (r: any): Tether => ({
   id: String(r.id), roomCode: r.roomCode, owner: hex(r.owner), targetKind: r.targetKind,
@@ -341,19 +343,19 @@ export const net = {
   leaveRoom: () => call(c => c.reducers.leaveRoom({})),
   startRun: () => call(c => c.reducers.startRun({})),
   beginPlay: () => call(c => c.reducers.beginPlay({})),
-  timeUp: () => call(c => c.reducers.timeUp({})),
   backToLobby: () => call(c => c.reducers.backToLobby({})),
   claimHost: () => call(c => c.reducers.claimHost({})),
+  respawn: () => call(c => c.reducers.respawn({})),
   syncShip: (p: ShipPose) => call(c => { lastSendAt = Date.now(); c.reducers.syncShip(p); }),
-  tetherCrew: (crewId: number) => call(c => c.reducers.tetherCrew({ crewId })),
+  tetherCrew: (crewId: number, air: number) => call(c => c.reducers.tetherCrew({ crewId, air })),
+  reportPod: (crewId: number, x: number, y: number, z: number, air: number) => call(c => c.reducers.reportPod({ crewId, x, y, z, air })),
   tetherShip: (target: string) => call(c => {
     const row = [...c.db.ship.iter()].find(s => hex(s.identity) === target);
     if (row) c.reducers.tetherShip({ target: row.identity });
   }),
   releaseTether: () => call(c => c.reducers.releaseTether({})),
-  dockCrew: (crewId: number, crewTau: number, pilotTau: number) => call(c => c.reducers.dockCrew({ crewId, crewTau, pilotTau })),
-  podLost: (crewId: number) => call(c => c.reducers.podLost({ crewId })),
-  dropTethers: () => call(c => c.reducers.dropTethers({})),
+  dockCrew: (crewId: number, crewTau: number, pilotTau: number, air: number) => call(c => c.reducers.dockCrew({ crewId, crewTau, pilotTau, air })),
+  loseCrew: (crewId: number, x: number, y: number, z: number) => call(c => c.reducers.loseCrew({ crewId, x, y, z })),
   fireEvent: (name: string) => call(c => c.reducers.fireEvent({ name })),
 
   subscribe(l: () => void) {

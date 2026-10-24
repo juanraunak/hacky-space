@@ -2,7 +2,7 @@ import { SenderError } from 'spacetimedb/server';
 import { Timestamp } from 'spacetimedb';
 import spacetimedb from './schema';
 import type { Ctx } from './schema';
-import { COUNTDOWN_S, INTRO_S, MAX_PILOTS, planCrew } from './rules';
+import { COUNTDOWN_S, INTRO_S, MAX_PILOTS, POD_AIR_S, planCrew } from './rules';
 import { spawnShip } from './helpers';
 
 function myRoom(ctx: Ctx) {
@@ -38,6 +38,7 @@ export const startRun = spacetimedb.reducer(ctx => {
   );
   const seed = Math.floor(ctx.random() * 0xffffffff) >>> 0;
   const startedAt = new Timestamp(micros(ctx.timestamp) + BigInt(INTRO_S) * 1_000_000n);
+  const startedMs = Number(micros(startedAt) / 1000n);
   const plan = planCrew(seed, pilots);
 
   ctx.db.run.insert({
@@ -50,21 +51,29 @@ export const startRun = spacetimedb.reducer(ctx => {
     crew_count: plan.length,
     result: '',
     ended_at: ctx.timestamp,
+    pod_air_s: POD_AIR_S,
   });
   for (const c of plan) {
     ctx.db.crew.insert({
       id: 0,
       room_code: code,
       ...c,
-      status: 'lost',
+      status: 'waiting',
       towed_by: room.host,
       tau: 0,
       home_at: ctx.timestamp,
       pilot_tau: 0,
+      air: POD_AIR_S,
+      air_ms: startedMs,
+      px: c.x,
+      py: c.y,
+      pz: c.z,
+      moved: false,
     });
   }
   // Every ship starts the run fresh at the mothership.
   for (const ship of [...ctx.db.ship.room_code.filter(code)]) spawnShip(ctx, code, ship.identity);
+  ctx.db.room_event.insert({ id: 0n, room_code: code, name: 'intro', fired_by: ctx.sender, fired_at: ctx.timestamp });
   ctx.db.room.code.update({ ...room, phase: 'intro' });
 });
 
@@ -79,19 +88,7 @@ export const beginPlay = spacetimedb.reducer(ctx => {
   ctx.db.room.code.update({ ...room, phase: 'playing' });
 });
 
-/** The star went off. Only true once the countdown has really run out. */
-export const timeUp = spacetimedb.reducer(ctx => {
-  const room = myRoom(ctx);
-  if (room.phase !== 'playing') return;
-  const run = ctx.db.run.room_code.find(room.code);
-  if (!run) return;
-  const end = micros(run.started_at) + BigInt(run.countdown_s) * 1_000_000n;
-  if (micros(ctx.timestamp) + 1_000_000n < end) return;
-  ctx.db.run.room_code.update({ ...run, result: 'lost', ended_at: ctx.timestamp });
-  ctx.db.room.code.update({ ...room, phase: 'lost' });
-});
-
-/** Host only: back to the lobby for another run. */
+/** Play Again. Host only: same party, same code, fresh universe on next launch. */
 export const backToLobby = spacetimedb.reducer(ctx => {
   const room = myRoom(ctx);
   if (!room.host.isEqual(ctx.sender)) throw new SenderError('only the host can do that');

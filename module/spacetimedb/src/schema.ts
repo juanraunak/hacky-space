@@ -78,6 +78,9 @@ const spacetimedb = schema({
       // '' while playing | won | lost
       result: t.string(),
       ended_at: t.timestamp(),
+      // --- v3, appended --- every pod's starting air, own-clock seconds.
+      // countdown_s above is unused since v3: there is no global countdown.
+      pod_air_s: t.u32().default(120),
     }
   ),
 
@@ -100,13 +103,26 @@ const spacetimedb = schema({
       vx: t.f64(),
       vy: t.f64(),
       vz: t.f64(),
-      // lost | towed | home
+      // waiting | towed | home | lost (lost = air ran out or fell in)
       status: t.string(),
       towed_by: t.identity(),
       tau: t.f64(),
       home_at: t.timestamp(),
       // the pilot's own clock at docking, for the reunion bubble
       pilot_tau: t.f64(),
+      // --- v3, appended ---
+      // the chief scientist: the last, deepest rescue
+      is_einstein: t.bool().default(false),
+      // pod air (own-clock seconds) as of air_ms (server epoch ms). While a pod
+      // waits, every client drains it at the pod's local clock rate.
+      air: t.f32().default(0),
+      air_ms: t.f64().default(0),
+      // where the pod actually is once it has been towed (moved = true).
+      // x,y,z above stays the rescue SITE so every client can rebuild the POI.
+      px: t.f64().default(0),
+      py: t.f64().default(0),
+      pz: t.f64().default(0),
+      moved: t.bool().default(false),
     }
   ),
 
