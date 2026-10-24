@@ -121,3 +121,7 @@ input { -webkit-user-select: text; user-select: text; touch-action: auto; }
 
 .clock-big, .mate-clock, .code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 .comms-line, .bubble-line, .finale p { font-family: 'Space Grotesk', system-ui, sans-serif; }
+
+.title h1 { font-size: clamp(32px, 8vw, 56px); letter-spacing: 0.22em; font-weight: 700; margin-top: 4px; }
+.title-art { width: min(180px, 42vw); aspect-ratio: 864 / 1184; object-fit: cover; border-radius: 14px; box-shadow: 0 0 60px rgba(120, 170, 255, 0.28); }
+.title p { max-width: 420px; line-height: 1.5; }

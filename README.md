@@ -1,11 +1,13 @@
 # Hacky Space
 
 Co-op multiplayer space rescue that teaches general relativity through play.
-Design: [docs/DESIGN.md](docs/DESIGN.md).
+Design: [docs/DESIGN.md](docs/DESIGN.md). Choices: [DECISIONS.md](DECISIONS.md).
 
-This is the **shell**: the full database is live, and the client connects,
-hosts rooms, joins by link or QR and walks every phase. The game itself
-(flight, universe, relativity, rescues) is not built yet.
+**Live:** https://witty-bay-06cc0cb0f.6.azurestaticapps.net (deploys on every push to `main`).
+
+Host a room, friends scan the QR, everyone flies a voxel rescue ship to bring
+the crew home from a black hole, a dark matter cloud, a pulsar and a
+wormhole, with Einstein on the radio. Every pod's air runs on its own clock.
 
 ## Run it
 

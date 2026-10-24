@@ -40,10 +40,12 @@ export function App() {
 
   if (!code) {
     return (
-      <main className="screen">
-        <h1>Hacky Space</h1>
-        <p className="dim">Co-op rescue. Bring the crew home before the star goes.</p>
+      <main className="screen title">
+        <img className="title-art" src="/einstein-ending.jpg" alt="Einstein, chief scientist" />
+        <h1>HACKY SPACE</h1>
+        <p className="dim">The star is dying. The crew is scattered. Every pod's clock runs at its own speed.<br />Bring them home, together.</p>
         <button className="big" onClick={host}>Host a room</button>
+        <p className="dim small">Friends join by scanning your room's QR code.</p>
         {error && <p className="error">{error}</p>}
       </main>
     );
@@ -71,8 +73,9 @@ export function App() {
 function NamePrompt({ onName }: { onName: (n: string) => void }) {
   const [v, setV] = useState('');
   return (
-    <main className="screen">
-      <h1>Hacky Space</h1>
+    <main className="screen title">
+      <img className="title-art" src="/einstein-comms.jpg" alt="Einstein, chief scientist" />
+      <h1>HACKY SPACE</h1>
       <form onSubmit={e => { e.preventDefault(); if (v.trim()) onName(v.trim().slice(0, 16)); }}>
         <input autoFocus value={v} onChange={e => setV(e.target.value)} placeholder="Your pilot name" maxLength={16} />
         <button className="big" type="submit">Go</button>

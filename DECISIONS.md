@@ -101,3 +101,36 @@ deliberately simplified. Newest at the bottom of each section.
   `client/public/einstein-comms.jpg` and `einstein-ending.jpg`. Note: the chest
   badge resembles a well-known TV franchise's insignia; regenerate before any
   public launch.
+
+## Juan's direction, 24 Oct afternoon
+
+- **Compact system, key phenomena only.** Rescue sites are black hole, dark
+  matter, pulsar and wormhole (slingshot and runaway pod dropped from the
+  plan). Sites sit 700 to 2300 units from home. No filler phenomena: open space
+  is empty apart from a few planets near home.
+- **Crew names** in order: Kai, Mia, Jay, Parth, Ninjago, then Zara, Leo, Ana,
+  Sam, Rio, Tess, Omar.
+- **Voxel art.** Einstein is a custom voxel character made with Hacky's
+  character generator (about $0.15 in model calls), the detail parts
+  (moustache, wild hair) hand-placed afterwards; the crew are Hacky's four
+  astronauts. The rescue ship is a hand-built voxel model in code
+  (`render/voxelShip.ts`).
+- **No relativistic tint on other ships** (Juan: it looked weird). Doppler
+  still shifts the star temperatures in the backdrop.
+- **Two views**: driving (chase camera) and cockpit (V / COCKPIT button), with
+  Einstein as a live hologram on the dashboard. Einstein stays the last rescue
+  in the story; the hologram is his radio link from the pod.
+- **Interiors**: the opening, every reunion and the ending happen on the
+  mothership's bridge with the characters.
+- **Feeling the pull**: the chase camera is dragged toward whatever pulls you,
+  your ship stretches toward a black hole, a red chevron shows the pull, a
+  green chevron shows the escape heading (out and sideways), phones that
+  support it vibrate.
+- **Clocks**: two analog dials, you vs the mothership (or the nearest pod),
+  in the HUD and on the cockpit dashboard.
+- **First arrival** at each phenomenon plays a 5.5 s orbit shot with an
+  Einstein line.
+- **Hosting**: Azure Static Web App `hacky-space` (Free tier) in the new
+  resource group `hacky-space-rg`, https://witty-bay-06cc0cb0f.6.azurestaticapps.net.
+  The Azure CLI on this Mac was signed in as rajesh@askberean.com
+  ("Microsoft Azure Sponsorship"); the resources were created there.
