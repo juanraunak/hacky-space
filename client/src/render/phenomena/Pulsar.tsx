@@ -118,7 +118,7 @@ function ringGeometry(seg: number, sides: number): THREE.BufferGeometry {
 const additive = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false } as const;
 
 function build(body: Body) {
-  const seed = (body.seed % 97) * 0.31;
+  const seed = (body.seed % 97) * 0.1; // small, so noise hashes keep precision on mobile GPUs
 
   // Spin frame: X = e1, Y = spin axis, Z = e1 x s (right-handed).
   const s = new THREE.Vector3(body.spinAxis.x, body.spinAxis.y, body.spinAxis.z).normalize();
@@ -140,7 +140,7 @@ function build(body: Body) {
   const coreGeo = new THREE.SphereGeometry(1, Q.coreSeg[0], Q.coreSeg[1]);
   const coreMat = new THREE.ShaderMaterial({
     vertexShader: CORE_VERT, fragmentShader: CORE_FRAG, toneMapped: false,
-    uniforms: { uAxis: { value: new THREE.Vector3(0, 1, 0) }, uI: { value: 5 }, uFlash: { value: 0 } },
+    uniforms: { uAxis: { value: new THREE.Vector3(0, 1, 0) }, uI: { value: 2.8 }, uFlash: { value: 0 } },
   });
 
   const quadGeo = new THREE.PlaneGeometry(2, 2);
@@ -165,7 +165,7 @@ function build(body: Body) {
     vertexShader: RING_VERT, fragmentShader: RING_FRAG, ...additive,
     uniforms: {
       uRadius: { value: POD_R }, uCosT: { value: Math.cos(body.beamTilt) }, uSinT: { value: Math.sin(body.beamTilt) },
-      uPix: { value: 0.001 }, uPhaseA: { value: 0 }, uPhaseB: { value: Math.PI }, uDir: { value: dir }, uI: { value: 0.55 },
+      uPix: { value: 0.001 }, uPhaseA: { value: 0 }, uPhaseB: { value: Math.PI }, uDir: { value: dir }, uI: { value: 0.5 },
     },
   });
 

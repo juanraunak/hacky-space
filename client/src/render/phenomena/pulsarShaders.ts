@@ -168,19 +168,26 @@ uniform float uRadius;  // slant distance from the star
 uniform float uCosT;    // cos/sin of the beam's tilt from the spin axis
 uniform float uSinT;
 uniform float uPix;
+uniform float uPhaseA;
+uniform float uPhaseB;
+uniform float uDir;
 varying float vPhi;
 varying float vSide;
 varying float vFacing;
 varying float vDist;
+const float TAU = 6.28318530718;
 void main() {
   float phi = aRing.x;
   float psi = aRing.y;
   float side = aRing.z;
+  // The arc swells toward the beam that is about to sweep it.
+  float ahead = mod(uDir * (phi - (side > 0.0 ? uPhaseA : uPhaseB)), TAU);
+  float swell = 1.0 + 1.4 * exp(-ahead / 0.9);
   vec3 radial = vec3(cos(phi), 0.0, sin(phi));
   vec3 centre = radial * (uRadius * uSinT) + vec3(0.0, side * uRadius * uCosT, 0.0);
   vec3 wc = (modelMatrix * vec4(centre, 1.0)).xyz;
   float dist = length(cameraPosition - wc);
-  float w = max(0.035, 0.9 * uPix * dist);
+  float w = max(0.035, 0.9 * uPix * dist) * swell;
   vec3 n = cos(psi) * radial + sin(psi) * vec3(0.0, 1.0, 0.0);
   vec3 wp = (modelMatrix * vec4(centre + n * w, 1.0)).xyz;
   vec3 wn = normalize(mat3(modelMatrix) * n);
@@ -205,9 +212,9 @@ const float TAU = 6.28318530718;
 void main() {
   float beam = vSide > 0.0 ? uPhaseA : uPhaseB;
   float ahead = mod(uDir * (vPhi - beam), TAU); // radians until the beam gets here
-  float lead = exp(-ahead / 1.6);
-  float trail = exp(-(TAU - ahead) / 0.22);
-  float I = 0.16 + 0.95 * lead + 0.6 * trail;
+  float lead = exp(-ahead / 1.1);
+  float trail = exp(-(TAU - ahead) / 0.15);
+  float I = 0.06 + 1.5 * lead * lead + 0.45 * lead + 0.5 * trail;
   float far = mix(1.0, 0.35, smoothstep(250.0, 700.0, vDist));
   vec3 col = vec3(0.62, 0.8, 1.0) * I * pow(vFacing, 1.5) * uI * far;
   gl_FragColor = vec4(col, 1.0);
@@ -255,10 +262,10 @@ void main() {
   for (int i = 0; i < ${steps}; i++) {
     vec3 p = (o + d * (t0 + (float(i) + j) * dt)) * inv; // in torus radii
     float rc = length(p.xz);
-    float dr = (rc - 1.0) / 0.30;
-    float dy = p.y / (0.13 + 0.12 * rc);
+    float dr = (rc - 1.0) / 0.24;
+    float dy = p.y / (0.10 + 0.09 * rc);
     float tor = exp(-(dr * dr + dy * dy));
-    float wind = exp(-rc * rc / 0.30 - p.y * p.y / 0.035) * 0.7;
+    float wind = exp(-rc * rc / 0.12 - p.y * p.y / 0.02) * 0.35;
     float m = tor + wind;
     if (m < 0.004) continue;
     vec3 q = vec3(uRot.x * p.x - uRot.y * p.z, p.y, uRot.y * p.x + uRot.x * p.z);
@@ -297,9 +304,12 @@ varying vec3 vVP;
 void main() {
   vec3 n = normalize(vN);
   float mu = clamp(dot(normalize(vVN), normalize(-vVP)), 0.0, 1.0);
-  float limb = 0.6 + 0.4 * mu;
-  float cap = smoothstep(0.80, 0.97, abs(dot(n, uAxis)));
-  vec3 col = vec3(0.72, 0.82, 1.0) * uI * limb * (1.0 + 1.2 * uFlash);
+  // White-hot centre falling to a blue limb, so it reads as a glowing orb
+  // rather than a flat disc even through AgX.
+  float limb = 0.3 + 0.7 * pow(mu, 0.7);
+  vec3 tint = mix(vec3(0.45, 0.62, 1.0), vec3(0.85, 0.92, 1.0), mu * mu);
+  float cap = smoothstep(0.82, 0.97, abs(dot(n, uAxis)));
+  vec3 col = tint * uI * limb * (1.0 + 1.5 * uFlash);
   col += vec3(0.92, 0.96, 1.0) * uI * 2.5 * cap;
   gl_FragColor = vec4(col, 1.0);
 }
