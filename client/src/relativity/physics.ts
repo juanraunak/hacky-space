@@ -34,6 +34,12 @@ export function field(p: Vec, bodies: Body[]): Field {
       if (r <= b.rs) horizon = b;
       const gap = Math.max(r - b.rs, b.rs * 0.01);
       a = b.gm / (gap * gap);
+      // The story's boss hole (play/story.ts): a wide zone where the pull never
+      // drops below pullFloor, so plain thrust loses and only boost crawls out.
+      if (b.pullFloor && b.pullR && r < b.pullR) {
+        const t = Math.min(1, Math.max(0, (b.pullR - r) / (b.pullR * 0.25)));
+        a = Math.max(a, b.pullFloor * t * t * (3 - 2 * t));
+      }
       danger = Math.max(danger, 1 - Math.min(1, (r - b.rs) / (b.rs * 0.6)));
     } else if (b.kind === 'dark_matter' || b.kind === 'exit_well') {
       a = b.gm / (r * r + b.core * b.core);

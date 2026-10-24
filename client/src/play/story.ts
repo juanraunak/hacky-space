@@ -19,6 +19,9 @@ export const HOLE = { x: OPEN.x, y: OPEN.y - 60, z: OPEN.z - 2200 };
 export const HOLE_RS = 45;
 /** Its pull: gm / (r - rs)^2. Felt from far away; past ~2 rs even boost can't escape. */
 export const HOLE_GM = 240000;
+/** Inside this radius the pull is at least HOLE_FLOOR: more than thrust (32), less than boost (80). */
+export const HOLE_ZONE = HOLE_RS * 12;
+export const HOLE_FLOOR = 52;
 
 /** Newton's planet, right behind the hole. */
 export const PLANET = { x: OPEN.x + 60, y: OPEN.y - 20, z: OPEN.z - 3250 };
@@ -98,6 +101,8 @@ export function dressWorld(w: World, seed: number) {
     const hole = poi.bodies[0];
     hole.rs = HOLE_RS; hole.radius = HOLE_RS; hole.clockRs = HOLE_RS;
     hole.gm = HOLE_GM;
+    hole.pullFloor = HOLE_FLOOR;
+    hole.pullR = HOLE_ZONE;
     hole.normal = unit({ x: 0.15, y: 1, z: 0.35 });
     hole.temp = 7000;
     poi.podStart = { ...NEWTON_AT };
@@ -114,9 +119,9 @@ export const NEWTON_AGE0 = 44;
 /** Too old: about the life expectancy in India. Past this, we were too late. */
 export const NEWTON_LIMIT = 72;
 /** Everyone ages this many years per second of normal time (the game's scale). */
-const BASE_YEARS_PER_S = 0.08;
+const BASE_YEARS_PER_S = 0.05;
 /** Extra years Newton lives through for each second our clocks drift apart (exaggerated). */
-const YEARS_PER_S = 1.3;
+const YEARS_PER_S = 0.6;
 
 /**
  * My clock, exaggerated so the lesson shows in a short game: real

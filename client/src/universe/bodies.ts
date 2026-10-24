@@ -32,6 +32,8 @@ export interface Body {
   // black hole disc normal
   normal: Vec;
   poi?: number; // crew id this body belongs to, if any
+  pullFloor?: number; // black hole: least pull inside pullR (the story's boss zone)
+  pullR?: number;
 }
 
 export const v = (x = 0, y = 0, z = 0): Vec => ({ x, y, z });
