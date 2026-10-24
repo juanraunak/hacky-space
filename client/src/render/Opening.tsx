@@ -16,7 +16,7 @@ import * as THREE from 'three';
 import { place, origin } from './origin';
 import { BlackHole } from './phenomena/BlackHole';
 import { v, type Body } from '../universe/bodies';
-import { Npc, SpeechBubble } from './Npc';
+import { Npc, BubbleLayer, type BubbleItem } from './Npc';
 import { MatContext, makeLensMats, makeLensUniforms } from './toon';
 import { LAPTOP } from './quality';
 import { input, isTouch } from '../input/input';
@@ -678,6 +678,11 @@ export function Opening() {
     lens.uCam.value.copy(tv.current.eye);
   }
 
+  const bubbles = useMemo<BubbleItem[]>(() => [
+    { at: () => [npcs.einstein.x, npcs.einstein.y + 2.6, npcs.einstein.z], source: () => saying('einstein') },
+    { at: () => (npcs.newton.visible ? [npcs.newton.x, npcs.newton.y + 2.6, npcs.newton.z] : null), source: () => (npcs.newton.visible && foot.c < COL.pull ? saying('newton') : null) },
+    { at: () => [PILOT.x, 1.75, PILOT.z], source: () => pressE(), small: true },
+  ], []);
   const pressE = () => (input.seatPrompt && foot.mode === 'foot' && !foot.sitAt
     ? { text: isTouch() ? 'Tap to sit' : 'Press E', shown: 99, alpha: 1 } : null);
 
@@ -693,15 +698,10 @@ export function Opening() {
         <pointLight ref={starL} position={[0, -1.5, -9]} intensity={22} distance={24} decay={1.4} color="#ffe2bf" />
         <pointLight ref={red} position={[0, 2.85, 0.5]} intensity={0} distance={12} decay={1.5} color="#ff2a1a" />
 
-        <Npc who="einstein" drive={npcs.einstein}>
-          <SpeechBubble position={[0, 3.3, 0]} source={() => saying('einstein')} />
-        </Npc>
+        <Npc who="einstein" drive={npcs.einstein} />
         <MatContext.Provider value={lensMats}>
-          <Npc who="newton" drive={npcs.newton}>
-            <SpeechBubble position={[0, 3.3, 0]} source={() => (npcs.newton.visible && foot.c < COL.pull ? saying('newton') : null)} />
-          </Npc>
+          <Npc who="newton" drive={npcs.newton} />
         </MatContext.Provider>
-        <SpeechBubble position={[PILOT.x, 1.75, PILOT.z]} source={pressE} small />
 
         {/* outside: the star resting in the rubber sheet of space */}
         <mesh ref={star} material={starMat}><sphereGeometry args={[1, 32, 24]} /></mesh>
@@ -713,6 +713,7 @@ export function Opening() {
         <instancedMesh ref={shards} args={[shardGeo, shardMat, SHARDS]} frustumCulled={false} visible={false} renderOrder={5} />
       </group>
       <group ref={holeGroup} visible={false}><BlackHole body={hole} /></group>
+      <BubbleLayer parent={root} items={bubbles} />
     </>
   );
 }

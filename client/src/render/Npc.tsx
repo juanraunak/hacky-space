@@ -7,7 +7,7 @@
 // Also here: the player kid (Hacky's Character.tsx Kid) for other players on
 // foot, and the typed comic bubble that floats over a head.
 
-import { useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -340,4 +340,65 @@ export function SpeechBubble({ position, source, small = false }: { position: [n
       </div>
     </Html>
   );
+}
+
+// --- bubbles drawn on one DOM layer (no drei Html: its per-bubble React roots
+// kept tearing down and Einstein's bubble never survived) ---------------------
+
+export interface BubbleItem { at: () => [number, number, number] | null; source: () => Said | null; small?: boolean }
+
+const px = (v: unknown) => (typeof v === 'number' ? `${v}px` : (v as string));
+function applyStyle(el: HTMLElement, s: React.CSSProperties) {
+  for (const [k, v] of Object.entries(s)) (el.style as unknown as Record<string, string>)[k] = px(v);
+}
+
+/** Comic bubbles over 3D points, projected every frame. Points are in `parent`'s local space. */
+export function BubbleLayer({ parent, items }: { parent: React.RefObject<THREE.Object3D | null>; items: BubbleItem[] }) {
+  const els = useRef<{ wrap: HTMLDivElement; box: HTMLDivElement; shown: HTMLSpanElement; rest: HTMLSpanElement; last: string }[]>([]);
+  const v = useMemo(() => new THREE.Vector3(), []);
+  useEffect(() => {
+    els.current = items.map(it => {
+      const wrap = document.createElement('div');
+      Object.assign(wrap.style, { position: 'fixed', left: '0', top: '0', zIndex: '6', pointerEvents: 'none', visibility: 'hidden' });
+      const box = document.createElement('div');
+      applyStyle(box, it.small ? { ...BUBBLE, padding: '7px 12px', font: "800 15px/1.2 'Space Grotesk', system-ui, sans-serif", borderRadius: 14 } : BUBBLE);
+      box.style.transform = 'translate(-28px, calc(-100% - 22px))';
+      const shown = document.createElement('span');
+      const rest = document.createElement('span'); rest.style.opacity = '0';
+      const ink = document.createElement('div'); applyStyle(ink, TAIL_INK);
+      const paper = document.createElement('div'); applyStyle(paper, TAIL_PAPER);
+      box.append(shown, rest, ink, paper);
+      wrap.append(box);
+      document.body.append(wrap);
+      return { wrap, box, shown, rest, last: '' };
+    });
+    return () => { els.current.forEach(e => e.wrap.remove()); els.current = []; };
+  }, [items]);
+  useFrame(({ camera, size }) => {
+    const p = parent.current;
+    items.forEach((it, i) => {
+      const e = els.current[i];
+      if (!e) return;
+      const s = it.source();
+      const at = it.at();
+      if (!s || !at || !p || !p.visible) { e.wrap.style.visibility = 'hidden'; return; }
+      v.set(at[0], at[1], at[2]).applyMatrix4(p.matrixWorld).project(camera);
+      if (v.z > 1 || Math.abs(v.x) > 1.3 || Math.abs(v.y) > 1.3) { e.wrap.style.visibility = 'hidden'; return; }
+      e.wrap.style.visibility = 'visible';
+      // keep the whole bubble on screen
+      const bw = e.box.offsetWidth || 260, bh = e.box.offsetHeight || 60;
+      const sx = Math.min(size.width - bw + 12, Math.max(40, (v.x * 0.5 + 0.5) * size.width));
+      const sy = Math.min(size.height - 20, Math.max(bh + 40, (-v.y * 0.5 + 0.5) * size.height));
+      e.wrap.style.transform = `translate(${sx}px, ${sy}px)`;
+      e.box.style.opacity = String(Math.max(0, Math.min(1, s.alpha)));
+      const key = `${s.text}|${s.shown}`;
+      if (key !== e.last) {
+        const chars = Array.from(s.text);
+        e.shown.textContent = chars.slice(0, s.shown).join('');
+        e.rest.textContent = chars.slice(s.shown).join('');
+        e.last = key;
+      }
+    });
+  });
+  return null;
 }

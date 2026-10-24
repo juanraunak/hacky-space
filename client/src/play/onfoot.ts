@@ -82,10 +82,13 @@ export type Who = 'newton' | 'einstein';
 interface Line { who: Who; text: string }
 
 export const SCRIPT: Line[] = [
-  { who: 'newton', text: 'What are you doing, Albert? Gravity is a pull!' },
-  { who: 'einstein', text: 'No rope, Isaac. Look — space itself bends.' },
-  { who: 'newton', text: 'Nonsense! Time is the same everywhere.' },
-  { who: 'einstein', text: 'Not near something that heavy.' },
+  { who: 'newton', text: 'What are you doing, Albert? Gravity is a pull! An invisible rope!' },
+  { who: 'einstein', text: 'No rope, Isaac. Space is like a blanket. Look.' },
+  { who: 'einstein', text: 'Put something heavy on it, and it sags.' },
+  { who: 'newton', text: 'So?' },
+  { who: 'einstein', text: 'Things roll toward the dip. That is gravity.' },
+  { who: 'newton', text: 'Nonsense! And time is the same everywhere.' },
+  { who: 'einstein', text: 'Not down in the dip. There, time runs slower.' },
 ];
 
 const TYPE_S = 0.034;

@@ -15,6 +15,7 @@ import { Starfield } from './Starfield';
 import { FarMarkers } from './FarMarkers';
 import { LocalShip, RemoteShips, Pods, Tethers, Mothership } from './craft';
 import { Opening } from './Opening';
+import { foot } from '../play/onfoot';
 import { Nebulae3D } from './Nebulae3D';
 import { Dust } from './Dust';
 import { Gates } from './Gates';
@@ -170,6 +171,13 @@ function PostFX() {
 const OFF = new Set((new URLSearchParams(location.search).get('off') ?? '').split(','));
 const on = (k: string) => !OFF.has(k);
 
+/** The real phenomena stay out of sight while you're on foot in the ship scene. */
+function HideOnFoot({ children }: { children: React.ReactNode }) {
+  const g = useRef<THREE.Group>(null);
+  useFrame(() => { if (g.current) g.current.visible = foot.mode !== 'foot'; });
+  return <group ref={g}>{children}</group>;
+}
+
 function World3D() {
   useNet();
   syncWorld();
@@ -186,7 +194,7 @@ function World3D() {
       {on('sky') && <SkyBaker seed={run.seed} />}
       {on('stars') && <Starfield seed={run.seed} />}
       {on('far') && <FarMarkers world={world} />}
-      {on('pois') && world.pois.flatMap(p => p.bodies).map(b => <BodyView key={b.id} body={b} />)}
+      {on('pois') && <HideOnFoot>{world.pois.flatMap(p => p.bodies).map(b => <BodyView key={b.id} body={b} />)}</HideOnFoot>}
       {on('chunks') && <ChunkStreamer world={world} />}
       {on('ms') && <Mothership />}
       <Opening />
