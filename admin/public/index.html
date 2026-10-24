@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hacky Admin</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #2a2f3a; --text: #e6e8ec; --dim: #8b93a3;
+    --accent: #6c8cff; --ok: #35c47c; --bad: #ff5d5d; --warn: #f2b23a; --hold: #b48cff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--dim); margin: 0 0 24px; font-size: 13px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  label { display: block; font-size: 13px; color: var(--dim); margin: 0 0 6px; }
+  input[type=text], textarea {
+    width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; font: inherit;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .field { margin-bottom: 16px; }
+  .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .check { display: flex; gap: 8px; align-items: center; color: var(--dim); font-size: 13px; margin: 0; }
+  button {
+    background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: wait; }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); font-weight: 500; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .s-completed { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+  .s-failed, .s-error { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+  .s-hitl_triggered { background: color-mix(in srgb, var(--hold) 20%, transparent); color: var(--hold); }
+  .s-budget_exceeded, .s-other { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+  .note { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--bg); border-left: 3px solid var(--line); }
+  .stats { display: flex; gap: 24px; margin: 14px 0; color: var(--dim); font-size: 13px; }
+  .stats b { color: var(--text); font-size: 15px; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin: 0; }
+  details summary { cursor: pointer; color: var(--dim); font-size: 13px; margin-top: 12px; }
+  .warnbar { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; font-size: 13px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Hacky Admin</h1>
+  <p class="sub">Run AgenticOrg agents. <span id="base"></span></p>
+
+  <div class="warnbar" id="nokey" hidden>No API key on the server yet. Put <span class="mono">AGENTICORG_API_KEY</span> in <span class="mono">admin/.env</span> and restart.</div>
+
+  <form class="panel" id="form">
+    <div class="field">
+      <label for="agent">Agent UUID</label>
+      <input type="text" id="agent" class="mono" list="agents" placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" required />
+      <datalist id="agents"></datalist>
+    </div>
+    <div class="field">
+      <label for="task">Task</label>
+      <textarea id="task" placeholder="What should the agent do?"></textarea>
+    </div>
+    <details id="adv">
+      <summary>Custom inputs and context (JSON)</summary>
+      <div class="field" style="margin-top:12px">
+        <label for="inputs">inputs (leave empty to send {"task": …})</label>
+        <textarea id="inputs" class="mono" style="min-height:70px" placeholder='{"task": "..."}'></textarea>
+      </div>
+      <div class="field">
+        <label for="context">context</label>
+        <textarea id="context" class="mono" style="min-height:50px" placeholder="{}"></textarea>
+      </div>
+    </details>
+    <div class="row" style="margin-top:16px">
+      <button type="submit" id="go">Run agent</button>
+      <label class="check"><input type="checkbox" id="async" /> Long run (async)</label>
+      <span id="timer" class="sub" style="margin:0"></span>
+    </div>
+  </form>
+
+  <section class="panel" id="out" hidden>
+    <span class="badge" id="badge"></span>
+    <p class="note" id="msg" hidden></p>
+    <div class="stats" id="stats"></div>
+    <label>Output</label>
+    <pre id="output"></pre>
+    <div class="row" style="margin-top:12px" id="pollrow" hidden>
+      <button type="button" class="ghost" id="poll">Check status</button>
+    </div>
+    <details>
+      <summary>Full response</summary>
+      <pre id="raw" class="mono" style="margin-top:8px"></pre>
+    </details>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const RECENT_KEY = "hacky-admin-recent-agents";
+
+const MESSAGES = {
+  completed: "",
+  failed: "The agent run failed. See the output and full response for details.",
+  hitl_triggered: "Waiting for approval in the AgenticOrg UI. A human has to approve this step there before the agent continues.",
+  budget_exceeded: "Budget exceeded. The agent stopped because it ran out of its spend limit.",
+};
+
+function recent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+}
+function remember(id) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify([id, ...recent().filter((x) => x !== id)].slice(0, 10))); } catch {}
+}
+function fillAgents(list) {
+  const seen = new Set();
+  $("agents").innerHTML = "";
+  for (const a of list) {
+    if (!a.id || seen.has(a.id)) continue;
+    seen.add(a.id);
+    const o = document.createElement("option");
+    o.value = a.id;
+    if (a.name) o.label = a.name;
+    $("agents").appendChild(o);
+  }
+}
+
+async function boot() {
+  const h = await fetch("/api/health").then((r) => r.json()).catch(() => null);
+  if (h) {
+    $("base").textContent = "Talking to " + h.base;
+    $("nokey").hidden = h.hasKey;
+  }
+  const local = recent().map((id) => ({ id, name: "recent" }));
+  fillAgents(local);
+  if (local[0]) $("agent").value = local[0].id;
+  if (!h || !h.hasKey) return;
+  // The agent list is a nice-to-have: if the key can't list, typing the UUID still works.
+  const r = await fetch("/api/agents").then((r) => r.ok ? r.json() : null).catch(() => null);
+  const arr = Array.isArray(r) ? r : (r && (r.agents || r.items || r.data)) || [];
+  fillAgents([...local, ...arr.map((a) => ({ id: a.id || a.agent_id || a.uuid, name: a.name || a.agent_type || a.type }))]);
+}
+
+function parseJson(text, label) {
+  if (!text.trim()) return undefined;
+  try { return JSON.parse(text); } catch { throw new Error(label + " is not valid JSON"); }
+}
+
+// Async 202 bodies vary: look for a status url or a run/task id to poll.
+function statusPath(body, agentId) {
+  if (!body || typeof body !== "object") return null;
+  const url = body.status_url || body.poll_url || body.url || (body.links && body.links.status);
+  if (typeof url === "string") {
+    try { const p = new URL(url, location.origin).pathname; if (p.startsWith("/api/v1/")) return p + new URL(url, location.origin).search; } catch {}
+  }
+  const id = body.run_id || body.task_id || body.job_id || body.id;
+  return id ? `/api/v1/agents/${agentId}/runs/${id}` : null;
+}
+
+function show(payload, agentId) {
+  const res = payload.result || {};
+  const status = res.status || (payload.httpStatus === 202 ? "accepted" : payload.error ? "error" : "unknown");
+  const cls = ["completed", "failed", "error", "hitl_triggered", "budget_exceeded"].includes(status) ? status : "other";
+  $("out").hidden = false;
+  $("badge").className = "badge s-" + cls;
+  $("badge").textContent = status.replace(/_/g, " ");
+
+  let msg = MESSAGES[status];
+  if (msg === undefined) msg = payload.error || (payload.httpStatus === 202 ? "Started. The run continues in the background, check its status below." : "");
+  if (!payload.error && payload.httpStatus >= 400) msg = `AgenticOrg answered HTTP ${payload.httpStatus}. ` + (res.detail ? JSON.stringify(res.detail) : "");
+  $("msg").hidden = !msg;
+  $("msg").textContent = msg;
+
+  const stats = [];
+  if (res.confidence !== undefined && res.confidence !== null) {
+    const c = Number(res.confidence);
+    stats.push(`Confidence <b>${isNaN(c) ? res.confidence : (c <= 1 ? Math.round(c * 100) + "%" : c)}</b>`);
+  }
+  if (payload.httpStatus) stats.push(`HTTP <b>${payload.httpStatus}</b>`);
+  if (payload.ms) stats.push(`Took <b>${(payload.ms / 1000).toFixed(1)} s</b>`);
+  $("stats").innerHTML = stats.join("");
+
+  const out = res.output !== undefined ? res.output : (payload.error || "(no output field)");
+  $("output").textContent = typeof out === "string" ? out : JSON.stringify(out, null, 2);
+  $("raw").textContent = JSON.stringify(payload, null, 2);
+
+  const p = payload.httpStatus === 202 ? statusPath(res, agentId) : null;
+  $("pollrow").hidden = !p;
+  $("poll").dataset.path = p || "";
+  $("poll").dataset.agent = agentId;
+}
+
+let tick;
+function busy(on) {
+  $("go").disabled = on;
+  $("poll").disabled = on;
+  clearInterval(tick);
+  $("timer").textContent = "";
+  if (on) {
+    const t0 = Date.now();
+    tick = setInterval(() => { $("timer").textContent = "Running… " + Math.round((Date.now() - t0) / 1000) + " s"; }, 500);
+  }
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const agentId = $("agent").value.trim();
+  let body;
+  try {
+    body = {
+      agentId,
+      task: $("task").value,
+      inputs: parseJson($("inputs").value, "inputs"),
+      context: parseJson($("context").value, "context"),
+      async: $("async").checked,
+    };
+  } catch (err) { return show({ error: err.message }, agentId); }
+  busy(true);
+  try {
+    const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (r.ok) remember(agentId);
+    show(data, agentId);
+  } catch (err) {
+    show({ error: String(err.message || err) }, agentId);
+  } finally { busy(false); }
+});
+
+$("poll").addEventListener("click", async () => {
+  const { path, agent } = $("poll").dataset;
+  busy(true);
+  try {
+    const r = await fetch("/api/status?path=" + encodeURIComponent(path));
+    const data = await r.json();
+    show({ httpStatus: r.status, result: data, error: r.ok ? undefined : data.error }, agent);
+    if (r.ok && !["completed", "failed", "hitl_triggered", "budget_exceeded"].includes(data.status)) {
+      $("pollrow").hidden = false; $("poll").dataset.path = path;
+    }
+  } catch (err) { show({ error: String(err.message || err) }, agent); }
+  finally { busy(false); }
+});
+
+boot();
+</script>
+</body>
+</html>
