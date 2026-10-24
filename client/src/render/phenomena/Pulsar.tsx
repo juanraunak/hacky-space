@@ -1,6 +1,6 @@
 // A pulsar rescue site: a tiny blinding blue-white neutron star, a soft wind
 // nebula torus in its spin equator, two lighthouse beams along
-// +/- pulsarAxis(body, game.worldS), and a hairline "impact preview" ring on
+// +/- pulsarAxis(body, story.seenS), and a hairline "impact preview" ring on
 // each sweep cone at the pod's distance showing where each beam passes next.
 //
 // The beams are shaded from the exact hazard volume (BEAM_HALF_ANGLE,
@@ -16,6 +16,7 @@ import { place } from '../origin';
 import { LAPTOP } from '../quality';
 import { BEAM_HALF_ANGLE, BEAM_LENGTH, pulsarAxis } from '../../relativity/hazards';
 import { game } from '../../play/game';
+import { story } from '../../play/story';
 import {
   BEAM_VERT, beamFrag, FLOW_PERIOD, RING_VERT, RING_FRAG, NEB_VERT, nebFrag,
   CORE_VERT, CORE_FRAG, GLOW_VERT, GLOW_FRAG,
@@ -67,13 +68,13 @@ function blinkFrom(mx: number, my: number, mz: number, dx: number, dy: number, d
  * (where the beam can no longer hurt you). camPos is a world position.
  */
 export function pulsarFlash(body: Body, camPos: Vec): number {
-  const m = pulsarAxis(body, game.worldS);
+  const m = pulsarAxis(body, story.seenS);
   return flashFrom(m.x, m.y, m.z, camPos.x - body.x, camPos.y - body.y, camPos.z - body.z);
 }
 
 /** 0..1 lighthouse blink seen from camPos at any distance (the star flares as a beam crosses your line of sight). */
 export function pulsarBlink(body: Body, camPos: Vec): number {
-  const m = pulsarAxis(body, game.worldS);
+  const m = pulsarAxis(body, story.seenS);
   return blinkFrom(m.x, m.y, m.z, camPos.x - body.x, camPos.y - body.y, camPos.z - body.z);
 }
 
@@ -222,7 +223,7 @@ export function Pulsar({ body }: { body: Body }) {
     const t = state.clock.elapsedTime;
 
     // The hazard's own axis, same clock as the damage check.
-    const m = pulsarAxis(body, game.worldS);
+    const m = pulsarAxis(body, story.seenS);
     const mx = m.x, my = m.y, mz = m.z;
 
     // Beam frame co-rotating with the star: Y = beam, X = s x m, Z = X x Y.

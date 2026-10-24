@@ -107,7 +107,7 @@ export function LocalShip() {
     <group ref={ref}>
       <group ref={stretch}>
         <group ref={inner}>
-          <group ref={body}><ShipBody color={me?.color ?? '#ffffff'} engine={engine} age={() => ageFromTau(ship.tau)} /></group>
+          <group ref={body}><ShipBody color={me?.color ?? '#ffffff'} engine={engine} age={() => ageFromTau(ship.tau) * 0.15 /* your ship stays nearly new: the twin shows the time */} /></group>
           <group ref={cockpit} visible={false}><Cockpit /></group>
         </group>
       </group>
@@ -188,12 +188,23 @@ function RemoteShip({ identity }: { identity: string }) {
   });
   return (
     <group ref={ref}>
-      <ShipBody color={player?.color ?? '#aaa'} engine={engine} age={() => ageFromTau(net.ship(identity)?.tau)} />
+      <ShipBody color={player?.color ?? '#aaa'} engine={engine} age={() => seenAge(net.ship(identity)?.tau)} />
       <Html position={[0, 2.2, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={tag} className="tag" style={{ borderColor: player?.color }} />
       </Html>
     </group>
   );
+}
+
+/**
+ * How old a friend's ship looks to me: its own age, plus how much more time
+ * it has lived than my ship, exaggerated (PLAN.md v4). If I sat deep in the
+ * hole while they waited up top, they lived longer: their ship rusts, mine
+ * stays new. (On their screen the same rule keeps my ship new.)
+ */
+function seenAge(tau: number | undefined) {
+  const extra = Math.max(0, (tau ?? 0) - ship.tau - 4);
+  return Math.min(1, ageFromTau(tau) + extra * 0.035);
 }
 
 export function RemoteShips() {
@@ -215,15 +226,19 @@ function Pod({ crew, override }: { crew: Crew; override?: (id: number) => THREE.
   const beacon = useMemo(() => emissive('#ff5544', 8), []);
   const inner = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 0.8, 0.5), toneMapped: false, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false }), []);
   const big = crew.isEinstein || crew.twoShip;
-  useFrame(({ clock }) => {
+  const spin = useRef(0);
+  useFrame(({ clock }, dt) => {
     const g = ref.current;
     const p = game.pods.get(crew.id);
+    if (g && !p) g.visible = false; // not in the story: only Newton is out there
     if (!g || !p) return;
     const o = override?.(crew.id);
     if (o) g.position.copy(o); else place(g, p.pos);
     g.visible = p.crew.status !== 'home';
-    g.rotation.y = clock.elapsedTime * 0.25;
-    g.rotation.z = Math.sin(clock.elapsedTime * 0.4) * 0.15;
+    // Deep in the hole his clock barely ticks: he turns as slowly as his time runs.
+    spin.current += dt * Math.max(0.01, p.rate * p.rate);
+    g.rotation.y = spin.current * 0.25;
+    g.rotation.z = Math.sin(spin.current * 0.4) * 0.15;
     const lost = p.crew.status === 'lost';
     // Gravitational redshift: a pod deep in a well glows dim and red.
     const r = p.rate;

@@ -23,6 +23,8 @@ import { einsteinTick, einsteinOnHome, sayArrival } from './einstein';
 import { audio } from '../audio/audio';
 import { airFloorMs, stepOnFoot } from './onfoot';
 import { fx } from '../cutscenes/cutscenes';
+import { dressWorld, newtonOf, newtonSite, resetStory, story } from './story';
+import { stepStory, die } from './storyStep';
 
 export const DOCK = { x: MOTHERSHIP.x + DOCK_OFFSET.x, y: MOTHERSHIP.y + DOCK_OFFSET.y, z: MOTHERSHIP.z + DOCK_OFFSET.z };
 
@@ -104,7 +106,10 @@ export function syncWorld() {
   const key = `${run.seed}:${crew.map(c => c.id).join(',')}`;
   if (key === game.worldKey) return;
   game.worldKey = key;
-  game.world = makeWorld(run.seed, crew.map(siteOf));
+  // The story (PLAN.md v4): only Newton (on his planet past the hole), plus the sights.
+  const newton = newtonOf(crew);
+  game.world = makeWorld(run.seed, newton ? [newtonSite(newton)] : []);
+  dressWorld(game.world, run.seed);
   game.pods.clear();
   game.lostSent.clear();
   game.dockSent.clear();
@@ -171,6 +176,8 @@ export function stepGame(rawDt: number) {
     game.runSeed = run.seed;
     resetShipFromRow(true);
   }
+  const storyKey = `${run.seed}:${run.introAt}`;
+  if (story.runKey !== storyKey) resetStory(storyKey);
 
   const playing = room.phase === 'playing';
   const flying = playing || room.phase === 'intro' ? playing : false;
@@ -182,12 +189,17 @@ export function stepGame(rawDt: number) {
   if (walking) { sendPose(); return; }
   if (!flying) return;
 
+  // Fallen in: the ship stays where it crossed (friends see it frozen there).
+  // Dead in the hole, or found Newton: the ship stays put.
+  if (story.diedAt || story.foundAt) {
+    ship.u = v(); ship.vel = v(); ship.speed = 0; ship.thrusting = false; ship.boosting = false;
+    sendPose();
+    stepStory(dt);
+    return;
+  }
   stepShip(w, dt);
-  stepTether(w, dt);
-  stepTow(w, dt);
   sendPose();
-  einsteinTick(dt);
-  watchHomecomings();
+  stepStory(dt);
 }
 
 // --- my ship ----------------------------------------------------------------
@@ -265,14 +277,12 @@ function stepShip(w: World, dt: number) {
 
   // The core rule: oxygen drains on your own clock.
   ship.tau += dt * ship.rate;
-  if (!dark) ship.oxygen -= dt * ship.rate;
+  // (no air timer in the story: just go and look)
 
   // Horizon: gone, no rescue.
   if (f.horizon) {
     audio.thud(1);
-    if (game.tow) net.loseCrew(game.tow.crewId, ship.pos.x, ship.pos.y, ship.pos.z);
-    ship.whiteout = 1.2;
-    respawnLocal();
+    fallIn(f);
     return;
   }
 
@@ -311,7 +321,7 @@ function stepShip(w: World, dt: number) {
   }
 
   // Arriving at a phenomenon for the first time: a slow cinematic look.
-  if (!game.arrival && w) {
+  if (ARRIVALS && !game.arrival && w) {
     for (const poi of w.pois) for (const b of poi.bodies) {
       if (game.visited.has(b.id) || b.kind === 'exit_well') continue;
       const d = dist(ship.pos, b);
@@ -319,7 +329,6 @@ function stepShip(w: World, dt: number) {
       if (d < near) {
         game.visited.add(b.id);
         game.arrival = { body: b, at: performance.now(), from: { ...ship.pos } };
-        sayArrival(b.kind);
         break;
       }
     }
@@ -377,10 +386,22 @@ function assist(fwd: Vec, f: Field, h: number) {
 let respawnRequested = false;
 export const requestRespawn = () => { respawnRequested = true; };
 
-function damage(n: number) {
-  ship.hull = Math.max(0, ship.hull - n);
-  ship.hitFlash = 1;
-  audio.hit();
+function damage(_n: number) {
+  // nothing hurts you in the story; a bump just flashes
+  ship.hitFlash = 0.4;
+}
+
+/** Crossing the horizon: you die. The ship stays just outside it, where friends see it freeze. */
+function fallIn(f: Field) {
+  const h = f.deepest;
+  if (h) {
+    const dx = ship.pos.x - h.x, dy = ship.pos.y - h.y, dz = ship.pos.z - h.z;
+    const r = Math.hypot(dx, dy, dz) || 1;
+    const k = (h.rs * 1.02) / r;
+    ship.pos = v(h.x + dx * k, h.y + dy * k, h.z + dz * k);
+  }
+  ship.u = v(); ship.vel = v();
+  die();
 }
 
 function collide(bodies: Body[]) {
@@ -414,6 +435,12 @@ export function displayShip(identity: string): ShipDisplay | undefined {
 }
 
 // --- pods ---------------------------------------------------------------------
+
+/** No boss-style arrival cards or orbit shots in the story (Juan, 24 Oct). */
+const ARRIVALS = false;
+
+/** Pods never run out of air in the story (PLAN.md v4): no timers. */
+const POD_LOSS = false;
 
 function stepPods(w: World, dt: number, playing: boolean) {
   const me = net.identity();
@@ -470,7 +497,7 @@ function stepPods(w: World, dt: number, playing: boolean) {
     }
 
     // A pod whose air ran out is lost. Any client may say so; the first wins.
-    if (playing && (c.status === 'waiting' || c.status === 'towed') && view.air <= 0 && !game.lostSent.has(c.id)) {
+    if (POD_LOSS && playing && (c.status === 'waiting' || c.status === 'towed') && view.air <= 0 && !game.lostSent.has(c.id)) {
       const mine = c.status === 'waiting' || (game.tow?.crewId === c.id) || c.towedBy === me;
       if (mine || c.status === 'waiting') {
         game.lostSent.add(c.id);
