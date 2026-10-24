@@ -1,0 +1,11 @@
+{
+  "name": "hacky-space",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "test": "npm --prefix client test",
+    "pub": "cd module && spacetime publish hacky-space -s maincloud --yes=remote --delete-data=never && spacetime generate --lang typescript --out-dir ../client/src/module_bindings && cd .. && git add client/src/module_bindings",
+    "describe": "spacetime describe hacky-space -s maincloud --json"
+  }
+}
