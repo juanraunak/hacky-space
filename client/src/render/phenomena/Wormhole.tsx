@@ -24,12 +24,16 @@ const FRAG = wormholeLensFrag({
   steps: LAPTOP ? 100 : 40,
   k: LAPTOP ? 0.1 : 0.22,
   oct: LAPTOP ? 3 : 2,
-  bias: 0,
+  bias: LAPTOP ? -0.75 : -0.5, // a little sharper than the footprint: far stars stay points
   cube: Q.cube,
   aniso: LAPTOP ? 4 : 2,
   noise: NOISE_GLSL,
 });
 const L_SHELL = whL(WH_SHELL);
+// Art grade on light from the far side: a touch cooler and brighter so the
+// sphere reads as somewhere else even when both skies share a palette.
+// (1, 1, 1) is the untouched physics.
+const THERE_GRADE: [number, number, number] = [0.95, 1.05, 1.25];
 const BEAT_S = 2.6; // heartbeat period in the mouth's own seconds
 const BEACON_PX = 22; // far glow radius, CSS pixels
 // The far glow is full while the mouth looks smaller than this (CSS px of
@@ -82,6 +86,7 @@ export function Wormhole({ body }: { body: Body }) {
       uSwirl: { value: 0 },
       uSpin: { value: 1 },
       uPulse: { value: 0 },
+      uThereGrade: { value: new THREE.Vector3(...THERE_GRADE) },
       uFx: { value: PHYSICS_FX },
       uSeed: { value: 0 },
     },

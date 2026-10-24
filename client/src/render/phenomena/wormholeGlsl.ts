@@ -93,6 +93,7 @@ uniform float uLCam;    // the camera's l (<= 0), used when it is inside the she
 uniform float uSwirl;   // swirl clock: the mouth's own time, seconds
 uniform float uSpin;    // swirl direction, +1 or -1
 uniform float uPulse;   // -1..1, the mouth's slow heartbeat
+uniform vec3 uThereGrade; // art grade on the far side's light (1,1,1 = untouched)
 uniform float uFx;
 uniform float uSeed;
 
@@ -207,10 +208,10 @@ void main() {
     if (there) col += textureLod(uThere, dj, lod).rgb;
     else col += textureLod(uHere, dj, lod).rgb;
   }
-  col *= (there ? uHasThere : uHasHere) / float(ANISO);
+  col *= (there ? uHasThere * uThereGrade : vec3(uHasHere)) / float(ANISO);
   // Light still circling the throat when the step budget ran out (a hair
   // at b = 1, under the rim): a soft blend of both skies.
-  vec3 fb = 0.5 * (textureLod(uHere, er, 6.0).rgb * uHasHere + textureLod(uThere, -er, 6.0).rgb * uHasThere);
+  vec3 fb = 0.5 * (textureLod(uHere, er, 6.0).rgb * uHasHere + textureLod(uThere, -er, 6.0).rgb * uHasThere * uThereGrade);
   col = mix(fb, col, done);
 
   // The doorway: a thin rim at the throat's apparent edge and a faint swirl
@@ -219,7 +220,7 @@ void main() {
   float tc = -dot(ro, rd);
   float gate = step(0.0, tc) * smoothstep(1.05, 1.7, camD);
   float x = b - 1.0;
-  float soft = x > 0.0 ? exp(-x / 0.16) : exp(x / 0.04);
+  float soft = x > 0.0 ? exp(-x / 0.2) : exp(x / 0.04);
   if (gate * soft > 0.002) {
     float w = max(0.01, bw * 1.3);
     float ring = exp(-x * x / (w * w));
@@ -234,12 +235,16 @@ void main() {
     float n = fbm(vec3(1.7 * cos(a2), 1.7 * sin(a2), 3.0 * lr) + uSeed, ${Math.max(1, Math.round(o.oct))});
     float swirl = smoothstep(0.25, 0.95, mix(arms, n, 0.45));
     vec3 glow = vec3(0.85, 0.93, 1.0) * 1.7 * ring * (0.85 + 0.3 * n) * (0.9 + 0.1 * uPulse)
-              + vec3(0.52, 0.72, 1.0) * soft * (0.06 + 0.3 * swirl);
+              + vec3(0.52, 0.72, 1.0) * soft * (0.05 + 0.5 * swirl);
     col += glow * gate;
   }
 
-  // Fade toward the shell edge so overlapping lenses still blend.
-  float alpha = 1.0 - smoothstep(0.7 * uShell, 0.98 * uShell, b);
+  // Opaque only where the light is visibly bent (more than ~2 px), then
+  // transparent: no doubled stars where the bending dies away, and a lens
+  // overlapping this one still shows through. Always gone by the shell edge.
+  float pixA = max(length(fwidth(rd)) * 0.7, 1e-6);
+  float bend = there ? 1e3 : abs(th - th0);
+  float alpha = min(clamp(bend / (2.0 * pixA), 0.0, 1.0), 1.0 - smoothstep(0.9 * uShell, 0.99 * uShell, b));
   gl_FragColor = vec4(col, alpha);
 }
 `;
@@ -300,11 +305,11 @@ ${noise}
 void main() {
   vec3 V = normalize(cameraPosition - vW);
   float mu = abs(dot(normalize(vN), V));
-  float limb = pow(1.0 - mu, 3.0);
+  float limb = pow(1.0 - mu, 2.5);
   float n = fbm(vObj * 2.6 + vec3(uSeed, uTime * 0.025, 0.0), ${Math.max(1, Math.round(oct))});
   vec3 ember = vec3(0.30, 0.075, 0.032);
-  vec3 col = ember * (limb * 1.15 + 0.02) * (0.55 + 0.9 * n);
-  col *= 1.0 - 0.92 * smoothstep(0.5, 1.0, mu); // dark heart
+  vec3 col = ember * (limb * 0.6 + 0.01) * (0.45 + 1.1 * n);
+  col *= 1.0 - 0.95 * smoothstep(0.35, 0.95, mu); // dark heart
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -344,13 +349,18 @@ void main() {
   vec3 col = texture(uSky, d).rgb * uHasSky;
 
   float x = (b - uR) / uR;
-  float halo = exp(-max(x, 0.0) * 2.0) * smoothstep(-0.02, 0.1, x) * step(0.0, tc);
+  // Continues the limb's glow outward (same ember, about half as bright at
+  // the edge) so the body has no drawn outline.
+  float halo = exp(-max(x, 0.0) * 4.0) * step(0.0, x) * step(0.0, tc);
   if (halo > 0.002) {
     float n = fbm(toC * 2.2 + vec3(uSeed, x * 1.5, uTime * 0.02), ${Math.max(1, Math.round(oct))});
-    col += vec3(0.26, 0.065, 0.028) * 0.16 * halo * (0.6 + 0.8 * n);
+    col += vec3(0.30, 0.075, 0.032) * 0.3 * halo * (0.45 + 1.1 * n);
   }
 
-  float alpha = 1.0 - smoothstep(0.5 * uS, 0.97 * uS, b);
+  // Opaque only where the bend is visible (see the wormhole lens), so the
+  // shell never paints plain sky over a neighbouring lens.
+  float pixA = max(length(fwidth(rd)) * 0.7, 1e-6);
+  float alpha = min(clamp(max(defl, halo * 0.05) / (2.0 * pixA), 0.0, 1.0), 1.0 - smoothstep(0.9 * uS, 0.99 * uS, b));
   gl_FragColor = vec4(col, alpha);
 }
 `;

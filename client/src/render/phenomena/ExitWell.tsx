@@ -20,7 +20,6 @@ const BEND = 0.07; // radians of bending for light grazing the limb
 
 export function ExitWell({ body }: { body: Body }) {
   const group = useRef<THREE.Group>(null);
-  const skyVer = useRef(-1);
   const seed = (body.seed % 1000) * 0.131;
 
   const ballGeo = useMemo(() => new THREE.SphereGeometry(1, Math.round(Q.sphereSeg * 0.6), Math.round(Q.sphereSeg * 0.3)), []);
@@ -61,8 +60,7 @@ export function ExitWell({ body }: { body: Body }) {
     place(g, body);
     const t = state.clock.elapsedTime;
     const u = lens.uniforms;
-    if (skyVer.current !== sky.version) {
-      skyVer.current = sky.version;
+    if (u.uSky.value !== sky.a) {
       u.uSky.value = sky.a;
       u.uHasSky.value = sky.a ? 1 : 0;
     }
@@ -77,7 +75,10 @@ export function ExitWell({ body }: { body: Body }) {
   return (
     <group ref={group}>
       <mesh geometry={ballGeo} material={ball} scale={body.radius} />
-      <mesh geometry={shellGeo} material={lens} scale={body.radius * WELL_SHELL} renderOrder={-10} />
+      {/* Drawn before the wormhole's lens (-10) so the doorway always lands
+          on top of this faint bend; the opaque body still hides the mouth
+          behind it through the depth buffer. */}
+      <mesh geometry={shellGeo} material={lens} scale={body.radius * WELL_SHELL} renderOrder={-11} />
     </group>
   );
 }
