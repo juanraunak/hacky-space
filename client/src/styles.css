@@ -141,3 +141,8 @@ input { -webkit-user-select: text; user-select: text; touch-action: auto; }
 }
 .comms .comms-who { font-size: 11px; letter-spacing: 0.22em; margin-bottom: 4px; }
 .comms .comms-line { font-size: 17px; line-height: 1.45; }
+
+/* phone flight: one big BOOST under the right thumb */
+.touch-buttons.one { display: block; bottom: max(28px, env(safe-area-inset-bottom)); }
+.tb.big { width: 96px; height: 96px; font-size: 14px; background: radial-gradient(circle at 40% 35%, rgba(130, 200, 255, 0.55), rgba(40, 30, 90, 0.7)); border: 2px solid rgba(150, 210, 255, 0.8); box-shadow: 0 0 18px rgba(100, 180, 255, 0.5); color: #fff; }
+.tb.big:active { transform: scale(0.94); }

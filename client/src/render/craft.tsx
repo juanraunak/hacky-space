@@ -20,7 +20,7 @@ import { doppler } from '../relativity/physics';
 import { fmtClock } from '../play/einstein';
 import { Q } from './quality';
 import { Kid, kidLook } from './Npc';
-import { foot } from '../play/onfoot';
+import { foot, OPEN } from '../play/onfoot';
 
 const hull = new THREE.MeshStandardMaterial({ color: '#c9ced6', metalness: 0.85, roughness: 0.32 });
 const dark = new THREE.MeshStandardMaterial({ color: '#2a2e36', metalness: 0.7, roughness: 0.5 });
@@ -153,7 +153,9 @@ function RemoteShip({ identity }: { identity: string }) {
     place(g, d);
     // Status 'home' means on foot in the ship (play/onfoot.ts): a kid in their
     // colour, upright, seen only by players still on foot themselves.
-    const walking = row.status === 'home';
+    // (and anyone standing in the cabin while I am on foot there: a kid, never a ship)
+    const inCabin = foot.mode === 'foot' && Math.hypot(row.x - OPEN.x, row.y - OPEN.y, row.z - OPEN.z) < 14;
+    const walking = row.status === 'home' || inCabin;
     g.visible = !walking || foot.mode === 'foot';
     if (craft.current) { craft.current.visible = !walking; craft.current.quaternion.copy(d.q); }
     if (kid.current) {

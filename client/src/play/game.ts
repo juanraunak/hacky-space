@@ -12,7 +12,7 @@ import {
   MOTHERSHIP, OXYGEN_S, POD_AIR, POD_REPORT_HZ, SYNC_FORCE_S, SYNC_HZ, SYNC_MIN_MOVE, SYNC_MIN_TURN,
   TETHER_HOLD_S, TETHER_LENGTH, TETHER_RANGE, THRUST, TOW_WEIGHT, TURN_RATE,
 } from './../game/constants';
-import { consumeLook, input } from '../input/input';
+import { consumeLook, input, isTouch, touchStick } from '../input/input';
 import {
   bodiesNear, dist, makeWorld, podPosAt, runawayTau, runawayVel, v,
   type Body, type CrewSite, type Poi, type Vec, type World,
@@ -214,8 +214,12 @@ function stepShip(w: World, dt: number) {
   // Steering: stick and keys set a turn rate; drag/mouse turns directly.
   const look = consumeLook();
   const k = 1 - Math.exp(-dt * 6);
-  ship.ang.yaw += (-input.stick.x * TURN_RATE * weight - ship.ang.yaw) * k;
-  ship.ang.pitch += (input.stick.y * TURN_RATE * weight - ship.ang.pitch) * k;
+  // Phone (Juan): the left stick only goes forward and back, like a throttle;
+  // the right thumb drags to steer. Keys still turn on a laptop.
+  const phone = isTouch() && touchStick.active;
+  const stickX = phone ? 0 : input.stick.x, stickY = phone ? 0 : input.stick.y;
+  ship.ang.yaw += (-stickX * TURN_RATE * weight - ship.ang.yaw) * k;
+  ship.ang.pitch += (stickY * TURN_RATE * weight - ship.ang.pitch) * k;
   if (!dark) {
     const yaw = ship.ang.yaw * dt - look.x * LOOK_RATE * weight;
     const pitch = ship.ang.pitch * dt - look.y * LOOK_RATE * weight;
@@ -235,9 +239,12 @@ function stepShip(w: World, dt: number) {
   const steps = deep ? 8 : 2;
   const h = dt / steps;
   const fwd = forward();
-  ship.thrusting = !dark && input.thrust;
+  const throttle = phone ? input.stick.y : 0; // -1 back .. 1 forward
+  ship.thrusting = !dark && (input.thrust || throttle > 0.15);
   ship.boosting = ship.thrusting && input.boost;
-  const thrust = ship.thrusting ? THRUST * (ship.boosting ? BOOST : 1) * weight : 0;
+  const reverse = !dark && !input.thrust && throttle < -0.15;
+  const push = input.thrust ? 1 : Math.max(0, throttle);
+  const thrust = ship.thrusting ? THRUST * (ship.boosting ? BOOST : push) * weight : reverse ? -THRUST * 0.7 * -throttle * weight : 0;
 
   let f = f0;
   for (let i = 0; i < steps; i++) {

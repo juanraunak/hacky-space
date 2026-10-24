@@ -87,7 +87,8 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
     p.x = e.clientX; p.y = e.clientY;
     p.travel += Math.hypot(dx, dy);
     if (p.role === 'move') setMove(p);
-    else if (!isLocked()) { input.look.x += dx; input.look.y += dy; }
+    // flying on a phone: drag down to look up (Juan); on foot it stays as it was
+    else if (!isLocked()) { input.look.x += dx; input.look.y += input.onFoot ? dy : -dy; }
   }, [setMove]);
 
   const onUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -126,9 +127,7 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
     };
   }, [setMove]);
 
-  const thrust = useLookButton('thrust');
   const boost = useLookButton('boost');
-  const brake = useLookButton('brake');
   const tether = useLookButton('tether');
 
   return (
@@ -144,11 +143,8 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
         </div>
       )}
       {showButtons && !foot.on && (
-        <div className="touch-buttons">
-          <button className="tb tb-tether" {...tether}>TETHER</button>
-          <button className="tb tb-brake" {...brake}>BRAKE</button>
-          <button className="tb tb-boost" {...boost}>BOOST</button>
-          <button className="tb tb-thrust" {...thrust}>THRUST</button>
+        <div className="touch-buttons one">
+          <button className="tb tb-boost big" {...boost}>BOOST</button>
         </div>
       )}
     </div>

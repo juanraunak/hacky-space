@@ -54,7 +54,7 @@ const KEYMAP: Record<string, keyof typeof input | null> = {
 
 function syncKeys() {
   const k = input.keys;
-  input.thrust = k.has('Space') || k.has('KeyW') || touchButtons.thrust;
+  input.thrust = k.has('Space') || k.has('KeyW') || touchButtons.thrust || touchButtons.boost; // phone BOOST flies on its own
   input.boost = k.has('ShiftLeft') || k.has('ShiftRight') || touchButtons.boost;
   input.brake = k.has('KeyS') || touchButtons.brake;
   input.tether = k.has('KeyE') || touchButtons.tether;
