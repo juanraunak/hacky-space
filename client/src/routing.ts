@@ -12,8 +12,11 @@ export function roomUrl(code: string): string {
 }
 
 /** Move to /r/CODE without a reload, keeping the query string. */
-export function goToRoom(code: string) {
-  history.replaceState(null, '', `/r/${code}${location.search}`);
+export function goToRoom(code: string, extra = '') {
+  const q = new URLSearchParams(location.search);
+  if (extra) q.set('level', extra);
+  const qs = q.toString();
+  history.replaceState(null, '', `/r/${code}${qs ? `?${qs}` : ''}`);
   dispatchEvent(new PopStateEvent('popstate'));
 }
 
@@ -25,4 +28,12 @@ export function useRoomCode(): string {
     return () => removeEventListener('popstate', on);
   }, []);
   return code;
+}
+
+/** /level/pulsar, /level/black-hole, /level/wormhole: a single rescue, straight into play. */
+export function levelFromPath(path = location.pathname, search = location.search): string {
+  const m = path.match(/^\/level\/([a-z-]+)/) ?? null;
+  const raw = m ? m[1] : new URLSearchParams(search).get('level') ?? '';
+  const kind = raw.replace(/-/g, '_');
+  return ['black_hole', 'pulsar', 'wormhole'].includes(kind) ? kind : '';
 }

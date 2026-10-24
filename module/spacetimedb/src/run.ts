@@ -1,8 +1,8 @@
-import { SenderError } from 'spacetimedb/server';
+import { SenderError, t } from 'spacetimedb/server';
 import { Timestamp } from 'spacetimedb';
 import spacetimedb from './schema';
 import type { Ctx } from './schema';
-import { COUNTDOWN_S, INTRO_S, MAX_PILOTS, POD_AIR_S, planCrew } from './rules';
+import { COUNTDOWN_S, INTRO_S, MAX_PILOTS, POD_AIR_S, planCrew, planLevel } from './rules';
 import { spawnShip } from './helpers';
 
 function myRoom(ctx: Ctx) {
@@ -75,6 +75,37 @@ export const startRun = spacetimedb.reducer(ctx => {
   for (const ship of [...ctx.db.ship.room_code.filter(code)]) spawnShip(ctx, code, ship.identity);
   ctx.db.room_event.insert({ id: 0n, room_code: code, name: 'intro', fired_by: ctx.sender, fired_at: ctx.timestamp });
   ctx.db.room.code.update({ ...room, phase: 'intro' });
+});
+
+/**
+ * Host only. A single level (black_hole | pulsar | wormhole): one crewmate at
+ * that phenomenon, no opening cinematic, straight into play. Friends can join.
+ */
+export const startLevel = spacetimedb.reducer({ kind: t.string() }, (ctx, { kind }) => {
+  const room = myRoom(ctx);
+  if (!room.host.isEqual(ctx.sender)) throw new SenderError('only the host can start a level');
+  const code = room.code;
+  clearRun(ctx, code);
+  const seed = Math.floor(ctx.random() * 0xffffffff) >>> 0;
+  const now = micros(ctx.timestamp);
+  const nowMs = Number(now / 1000n);
+  // intro_at in the past so no client plays the opening; play starts now.
+  const introAt = new Timestamp(now - BigInt(INTRO_S + 5) * 1_000_000n);
+  const plan = planLevel(seed, kind);
+  const pilots = Math.max(1, [...ctx.db.player.room_code.filter(code)].filter(p => p.connected).length);
+  ctx.db.run.insert({
+    room_code: code, seed, intro_at: introAt, started_at: ctx.timestamp, countdown_s: COUNTDOWN_S,
+    pilots, crew_count: plan.length, result: '', ended_at: ctx.timestamp, pod_air_s: POD_AIR_S,
+  });
+  for (const c of plan) {
+    ctx.db.crew.insert({
+      id: 0, room_code: code, ...c, status: 'waiting', towed_by: room.host, tau: 0, home_at: ctx.timestamp,
+      pilot_tau: 0, air: POD_AIR_S, air_ms: nowMs, px: c.x, py: c.y, pz: c.z, moved: false,
+    });
+  }
+  for (const ship of [...ctx.db.ship.room_code.filter(code)]) spawnShip(ctx, code, ship.identity);
+  ctx.db.room_event.insert({ id: 0n, room_code: code, name: `level:${kind}`, fired_by: ctx.sender, fired_at: ctx.timestamp });
+  ctx.db.room.code.update({ ...room, phase: 'playing' });
 });
 
 /** Anyone may call it; it only moves intro to playing once the intro is over. */

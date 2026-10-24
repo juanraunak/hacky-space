@@ -151,3 +151,22 @@ export function planCrew(seed: number, pilots: number): CrewPlan[] {
   });
   return plans;
 }
+
+/** A single practice level: one crewmate at one phenomenon, close to home. */
+export function planLevel(seed: number, kind: string): CrewPlan[] {
+  const rand = mulberry32(seed ^ 0x1e7e1);
+  const az = rand() * Math.PI * 2;
+  const d = 650;
+  const dir = { x: Math.cos(az), y: (rand() * 2 - 1) * 0.15, z: Math.sin(az) };
+  const l = Math.hypot(dir.x, dir.y, dir.z);
+  const poi = ALL_POIS.includes(kind) ? kind : 'black_hole';
+  return [{
+    slot: 0,
+    name: poi === 'pulsar' ? 'Mia' : poi === 'wormhole' ? 'Jay' : 'Kai',
+    poi,
+    two_ship: false,
+    x: (dir.x / l) * d, y: (dir.y / l) * d, z: (dir.z / l) * d,
+    vx: 0, vy: 0, vz: 0,
+    is_einstein: false,
+  }];
+}

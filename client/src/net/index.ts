@@ -342,6 +342,7 @@ export const net = {
   setName: (name: string) => call(c => c.reducers.setName({ name })),
   leaveRoom: () => call(c => c.reducers.leaveRoom({})),
   startRun: () => call(c => c.reducers.startRun({})),
+  startLevel: (kind: string) => call(c => c.reducers.startLevel({ kind })),
   beginPlay: () => call(c => c.reducers.beginPlay({})),
   backToLobby: () => call(c => c.reducers.backToLobby({})),
   claimHost: () => call(c => c.reducers.claimHost({})),

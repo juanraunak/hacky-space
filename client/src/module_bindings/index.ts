@@ -47,6 +47,7 @@ import ReleaseTetherReducer from "./release_tether_reducer";
 import ReportPodReducer from "./report_pod_reducer";
 import RespawnReducer from "./respawn_reducer";
 import SetNameReducer from "./set_name_reducer";
+import StartLevelReducer from "./start_level_reducer";
 import StartRunReducer from "./start_run_reducer";
 import SyncShipReducer from "./sync_ship_reducer";
 import TetherCrewReducer from "./tether_crew_reducer";
@@ -176,6 +177,7 @@ const reducersSchema = __reducers(
   __reducerSchema("report_pod", ReportPodReducer),
   __reducerSchema("respawn", RespawnReducer),
   __reducerSchema("set_name", SetNameReducer),
+  __reducerSchema("start_level", StartLevelReducer),
   __reducerSchema("start_run", StartRunReducer),
   __reducerSchema("sync_ship", SyncShipReducer),
   __reducerSchema("tether_crew", TetherCrewReducer),

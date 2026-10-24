@@ -78,7 +78,8 @@ export function checkEnd(ctx: Ctx, code: string) {
   if (!room || !run || room.phase !== 'playing') return;
   const einstein = crew.find(c => c.is_einstein);
   const others = crew.filter(c => !c.is_einstein && c.status === 'home').length;
-  const won = !!einstein && einstein.status === 'home' && others >= 1;
+  // A full run needs Einstein home plus one other; a single level just needs its crewmate home.
+  const won = einstein ? einstein.status === 'home' && others >= 1 : others >= 1;
   ctx.db.run.room_code.update({ ...run, result: won ? 'won' : 'lost', ended_at: ctx.timestamp });
   ctx.db.room.code.update({ ...room, phase: won ? 'won' : 'lost' });
 }

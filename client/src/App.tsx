@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { net, useNet } from './net';
-import { goToRoom, useRoomCode } from './routing';
+import { goToRoom, levelFromPath, useRoomCode } from './routing';
 import { Lobby } from './lobby/Lobby';
 import { DebugTables } from './lobby/DebugTables';
 import { GameScreen } from './play/GameScreen';
@@ -29,9 +29,25 @@ export function App() {
 
   async function host() {
     setError('');
-    try { goToRoom(await net.createRoom()); }
+    try { goToRoom(await net.createRoom(), levelFromPath()); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }
+
+  // A level link (/level/pulsar): make a room and drop straight into it.
+  const level = levelFromPath();
+  useEffect(() => {
+    if (level && !code && name) void host();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, code, name]);
+  const room0 = net.room();
+  const startedLevel = useRef('');
+  useEffect(() => {
+    if (!level || !room0 || joined !== code || !net.isHost()) return;
+    if (room0.phase === 'lobby' && startedLevel.current !== code) {
+      startedLevel.current = code;
+      net.startLevel(level);
+    }
+  });
 
   if (!name) {
     return (
