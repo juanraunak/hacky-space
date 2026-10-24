@@ -1,5 +1,5 @@
 // The far sky, baked once per run into a half-float cubemap: dense faint
-// stars, a galactic band, H-alpha / OIII nebula glow and dust lanes, all from
+// stars, a galactic band with dust lanes and only a faint nebula trace, all from
 // the run seed (technique after wwwtyro/space-3d, Unlicense; our own code).
 // Sky B is a different piece of sky, seen through wormhole mouths.
 //
@@ -100,7 +100,12 @@ void main() {
   float lanes = smoothstep(0.5, 0.9, ridged(d * 9.0 + uSeed * 0.2, 5));
   col += mix(vec3(0.85, 0.72, 0.55), vec3(1.0, 0.9, 0.75), clump) * band * (0.05 + 0.12 * clump) * (1.0 - 0.6 * lanes);
 
-  col += webbNebula(d) * mix(1.0, 0.8, uHue);
+  // Only a faint, desaturated trace of the nebula is baked into the far sky:
+  // the colour lives in the 3D clouds you can fly into (Nebulae3D.tsx). Sky B,
+  // seen through wormhole mouths, keeps a little more of it.
+  vec3 neb = webbNebula(d);
+  neb = mix(vec3(dot(neb, vec3(0.3, 0.5, 0.2))), neb, 0.8);
+  col += neb * mix(0.08, 0.35, uHue);
 
   // tiny far galaxies: soft little smudges, warm and blue
   vec3 gp = d * 90.0 + uSeed;

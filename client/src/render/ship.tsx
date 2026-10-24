@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Figure } from './Figures';
+import { Plant } from './Plant';
 import { drawDials, type Dial } from '../hud/dials';
 import { comms } from '../play/einstein';
 import { game, ship } from '../play/game';
@@ -72,6 +73,7 @@ export function Cockpit() {
         <mesh key={s} material={darkMat} position={[s * 0.8, 0.5, -1.25]} rotation={[0.25, 0, s * 0.45]}><boxGeometry args={[0.05, 0.85, 0.05]} /></mesh>
       ))}
       <mesh material={darkMat} position={[0, 0.88, -1.15]} rotation={[0.9, 0, 0]}><boxGeometry args={[1.1, 0.04, 0.05]} /></mesh>
+      <Plant />
       {/* Einstein in the co-pilot seat, turned toward you */}
       <mesh material={darkMat} position={[0.62, -0.25, -0.55]}><boxGeometry args={[0.42, 0.5, 0.42]} /></mesh>
       <group position={[0.62, -0.35, -0.62]} rotation={[0, -0.75, 0]}>

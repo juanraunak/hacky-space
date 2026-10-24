@@ -7,7 +7,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { Cockpit } from './ship';
-import { ShipBody } from './shipBody';
+import { ShipBody, ageFromTau } from './shipBody';
 import { VoxelChar, crewModel } from './VoxelChar';
 import { view } from '../play/view';
 import { fx } from '../cutscenes/cutscenes';
@@ -105,7 +105,7 @@ export function LocalShip() {
     <group ref={ref}>
       <group ref={stretch}>
         <group ref={inner}>
-          <group ref={body}><ShipBody color={me?.color ?? '#ffffff'} engine={engine} /></group>
+          <group ref={body}><ShipBody color={me?.color ?? '#ffffff'} engine={engine} age={() => ageFromTau(ship.tau)} /></group>
           <group ref={cockpit} visible={false}><Cockpit /></group>
         </group>
       </group>
@@ -167,7 +167,7 @@ function RemoteShip({ identity }: { identity: string }) {
   });
   return (
     <group ref={ref}>
-      <ShipBody color={player?.color ?? '#aaa'} engine={engine} />
+      <ShipBody color={player?.color ?? '#aaa'} engine={engine} age={() => ageFromTau(net.ship(identity)?.tau)} />
       <Html position={[0, 2.2, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={tag} className="tag" style={{ borderColor: player?.color }} />
       </Html>
