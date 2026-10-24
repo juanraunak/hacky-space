@@ -18,7 +18,7 @@ import { OPEN } from './onfoot';
 export const HOLE = { x: OPEN.x, y: OPEN.y - 60, z: OPEN.z - 2200 };
 export const HOLE_RS = 45;
 /** Its pull: gm / (r - rs)^2. Felt from far away; past ~2 rs even boost can't escape. */
-export const HOLE_GM = 90000;
+export const HOLE_GM = 240000;
 
 /** Newton's planet, right behind the hole. */
 export const PLANET = { x: OPEN.x + 60, y: OPEN.y - 20, z: OPEN.z - 3250 };
