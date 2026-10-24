@@ -15,7 +15,7 @@ import { Starfield } from './Starfield';
 import { FarMarkers } from './FarMarkers';
 import { LocalShip, RemoteShips, Pods, Tethers, Mothership } from './craft';
 import { Opening } from './Opening';
-import { StoryBubbles, StoryScenery } from './StoryLayer';
+import { StoryScenery } from './StoryLayer';
 import { foot } from '../play/onfoot';
 import { Nebulae3D } from './Nebulae3D';
 import { Dust } from './Dust';
@@ -197,7 +197,6 @@ function World3D() {
       {on('far') && <FarMarkers world={world} />}
       {on('pois') && <HideOnFoot>{world.pois.flatMap(p => p.bodies).map(b => <BodyView key={b.id} body={b} />)}</HideOnFoot>}
       {on('sights') && <HideOnFoot>{world.core.map(b => <BodyView key={b.id} body={b} />)}<StoryScenery /></HideOnFoot>}
-      <StoryBubbles />
       {on('chunks') && <ChunkStreamer world={world} />}
       {on('ms') && <Mothership />}
       <Opening />

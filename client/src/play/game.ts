@@ -191,7 +191,7 @@ export function stepGame(rawDt: number) {
 
   // Fallen in: the ship stays where it crossed (friends see it frozen there).
   // Dead in the hole, or found Newton: the ship stays put.
-  if (story.diedAt || story.foundAt) {
+  if (story.diedAt || story.foundAt || story.lostAt) {
     ship.u = v(); ship.vel = v(); ship.speed = 0; ship.thrusting = false; ship.boosting = false;
     sendPose();
     stepStory(dt);

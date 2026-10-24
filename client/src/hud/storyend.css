@@ -36,15 +36,24 @@
 
 
 .newton-photo {
-  position: fixed; top: 16px; left: 16px; z-index: 7; pointer-events: none;
-  background: #fff8e7; border: 3px solid #111; border-radius: 14px; box-shadow: 0 5px 0 #111;
-  padding: 8px 10px 6px; display: flex; flex-direction: column; align-items: center; rotate: -3deg;
-  transition: box-shadow 0.3s;
+  position: fixed; top: 14px; left: 14px; z-index: 7; pointer-events: none;
+  display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px;
+  background: rgba(255, 248, 231, 0.92); border: 2px solid #111; border-radius: 999px; box-shadow: 0 3px 0 #111;
 }
-.newton-photo.aging { animation: newton-shake 0.35s infinite; box-shadow: 0 5px 0 #111, 0 0 28px rgba(255, 150, 60, 0.9); }
+.newton-photo svg { border-radius: 50%; background: #dfeaf5; }
+.newton-photo.aging { animation: newton-shake 0.35s infinite; box-shadow: 0 3px 0 #111, 0 0 18px rgba(255, 150, 60, 0.9); }
 @keyframes newton-shake { 0%, 100% { translate: 0 0; } 25% { translate: -1px 1px; } 75% { translate: 1px -1px; } }
-.newton-name { font: 800 11px/1 'Space Grotesk', system-ui, sans-serif; letter-spacing: 0.18em; color: #111; opacity: 0.6; margin-top: 2px; }
-.newton-age { font: 800 20px/1.1 'Space Grotesk', system-ui, sans-serif; color: #111; }
+.newton-info { display: flex; flex-direction: column; gap: 4px; }
+.newton-age { font: 800 14px/1 'Space Grotesk', system-ui, sans-serif; color: #111; }
+.newton-bar { width: 74px; height: 6px; border-radius: 3px; background: rgba(0, 0, 0, 0.15); overflow: hidden; }
+.newton-bar i { display: block; height: 100%; border-radius: 3px; transition: width 0.3s, background 0.3s; }
+
+.newton-pointer { position: fixed; left: 0; top: 0; z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.newton-arrow {
+  width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid #ffd27a;
+  filter: drop-shadow(0 0 6px rgba(255, 190, 90, 0.8));
+}
+.newton-pointer span { font: 700 11px/1 'Space Grotesk', system-ui, sans-serif; color: #ffe3b0; letter-spacing: 0.06em; text-shadow: 0 1px 3px #000; }
 
 .found {
   position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
@@ -52,3 +61,28 @@
 }
 .found-newton { display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fff8e7; border: 3px solid #111; border-radius: 18px; box-shadow: 0 6px 0 #111; padding: 12px 16px 10px; rotate: -2deg; }
 .found-newton b { font: 800 14px/1 'Space Grotesk', system-ui, sans-serif; letter-spacing: 0.12em; color: #111; }
+
+/* --- the space look (flight only): deep navy-violet glass, cyan glow ------------ */
+.space-card {
+  background: linear-gradient(135deg, rgba(10, 18, 44, 0.9), rgba(38, 16, 68, 0.9));
+  border: 1.5px solid rgba(130, 200, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 26px rgba(90, 170, 255, 0.35), inset 0 0 30px rgba(120, 90, 255, 0.18);
+  color: #eef6ff; backdrop-filter: blur(6px);
+}
+.caption {
+  position: fixed; left: 50%; bottom: 34px; translate: -50% 0; z-index: 8; pointer-events: none;
+  width: min(760px, 92vw); padding: 16px 24px 18px; border-radius: 16px;
+  animation: caption-in 0.25s ease-out; transition: opacity 0.2s;
+}
+@keyframes caption-in { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.space-who { font: 800 13px/1 'Space Grotesk', system-ui, sans-serif; letter-spacing: 0.24em; color: #7fd6ff; text-shadow: 0 0 10px rgba(110, 200, 255, 0.8); margin-bottom: 8px; }
+.space-line { font: 700 24px/1.32 'Space Grotesk', system-ui, sans-serif; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); }
+.found .caption { position: relative; left: auto; bottom: auto; translate: none; }
+
+.newton-photo.space-card { background: linear-gradient(135deg, rgba(10, 18, 44, 0.9), rgba(38, 16, 68, 0.9)); border: 1.5px solid rgba(130, 200, 255, 0.55); border-radius: 999px; }
+.newton-photo.space-card svg { background: radial-gradient(circle, #23335f, #120c2a); }
+.newton-photo.space-card .newton-age { color: #eef6ff; }
+.newton-photo.space-card .newton-bar { background: rgba(255, 255, 255, 0.15); }
+.newton-photo.space-card.aging { box-shadow: 0 0 22px rgba(255, 140, 70, 0.9); border-color: #ffb066; }
+.found-newton.space-card { border-radius: 18px; rotate: 0deg; }
+.found-newton.space-card b { color: #7fd6ff; }

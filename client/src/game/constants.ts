@@ -2,7 +2,7 @@
 // module/spacetimedb/src/rules.ts; change both together.
 // Final tuned values are recorded in DECISIONS.md.
 
-export const C = 40; // light speed, units per second
+export const C = 90; // light speed, units per second (Juan: faster. The server never uses it.)
 export const CHUNK = 400; // universe chunk size, units
 export const INTRO_S = 30;
 export const MAX_PILOTS = 6;
@@ -15,8 +15,8 @@ export const SUN = { radius: 70, gm: 90000, clockRs: 4, temp: 3300 };
 
 // Ship
 export const OXYGEN_S = 180; // own-clock seconds of air
-export const THRUST = 20; // proper-velocity units/s^2
-export const BOOST = 2;
+export const THRUST = 32; // proper-velocity units/s^2
+export const BOOST = 2.5;
 export const BRAKE_K = 1.4; // exponential damping per second
 export const TURN_RATE = 1.7; // rad/s at full stick
 export const LOOK_RATE = 0.0032; // rad per pixel of drag / mouse

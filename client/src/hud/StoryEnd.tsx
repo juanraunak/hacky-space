@@ -10,8 +10,11 @@ import { useEffect, useRef, useState } from 'react';
 import { net } from '../net';
 import { ship } from '../play/game';
 import { foot } from '../play/onfoot';
-import { NEWTON_AGE0, myClockRate, newtonAge, story } from '../play/story';
-import { retry } from '../play/storyStep';
+import * as THREE from 'three';
+import { NEWTON_AGE0, NEWTON_AT, NEWTON_LIMIT, flightSaying, myClockRate, newtonAge, story } from '../play/story';
+import { retry, restartTrip } from '../play/storyStep';
+import { camRef } from '../render/CameraRig';
+import { origin } from '../render/origin';
 import './storyend.css';
 
 function useFrameTick() {
@@ -92,11 +95,93 @@ function NewtonPhoto() {
   const dt = (now - l.t) / 1000;
   if (dt > 0.25) { l.speed += ((age - l.age) / dt - l.speed) * 0.5; l.age = age; l.t = now; }
   const fast = Math.max(0, Math.min(1, l.speed / 1.2)); // years per second
+  const left = Math.max(0, Math.min(1, (NEWTON_LIMIT - age) / (NEWTON_LIMIT - NEWTON_AGE0)));
   return (
-    <div className={`newton-photo ${fast > 0.25 ? 'aging' : ''}`}>
-      <NewtonFace age={age} />
-      <div className="newton-name">NEWTON</div>
-      <div className="newton-age">age {Math.floor(age)}</div>
+    <div className={`space-card newton-photo ${fast > 0.25 ? 'aging' : ''}`}>
+      <NewtonFace age={age} size={44} />
+      <div className="newton-info">
+        <div className="newton-age">Newton {Math.floor(age)}</div>
+        <div className="newton-bar"><i style={{ width: `${left * 100}%`, background: left > 0.4 ? '#6fd08c' : left > 0.18 ? '#ffc04d' : '#ff5a4d' }} /></div>
+      </div>
+    </div>
+  );
+}
+
+// --- Einstein's lines in flight: a card at the bottom ----------------------------------
+
+function Caption() {
+  useFrameTick();
+  if (foot.mode !== 'fly') return null;
+  const said = flightSaying();
+  if (!said) return null;
+  const chars = Array.from(said.text);
+  return (
+    <div className="space-card caption" style={{ opacity: said.alpha }} key={said.text}>
+      <div className="space-who">EINSTEIN</div>
+      <div className="space-line"><span>{chars.slice(0, said.shown).join('')}</span><span style={{ opacity: 0 }}>{chars.slice(said.shown).join('')}</span></div>
+    </div>
+  );
+}
+
+// --- the pointer to Newton ------------------------------------------------------------
+
+/** A small arrow that points at Newton: on screen it sits over him, off screen it rides the edge. */
+function NewtonPointer() {
+  const el = useRef<HTMLDivElement>(null);
+  const label = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const v = new THREE.Vector3();
+    let id = 0;
+    const tick = () => {
+      id = requestAnimationFrame(tick);
+      const e = el.current, cam = camRef.current;
+      if (!e) return;
+      const on = foot.mode === 'fly' && !story.diedAt && !story.foundAt && !story.lostAt && !!cam;
+      e.style.display = on ? '' : 'none';
+      if (!on || !cam) return;
+      v.set(NEWTON_AT.x - origin.x, NEWTON_AT.y - origin.y, NEWTON_AT.z - origin.z).project(cam);
+      let x = v.x, y = v.y;
+      const behind = v.z > 1;
+      if (behind) { x = -x; y = -y; }
+      const m = Math.max(Math.abs(x), Math.abs(y));
+      const inside = !behind && m < 0.85;
+      if (!inside) { x = (x / (m || 1)) * 0.85; y = (y / (m || 1)) * 0.8; }
+      const W = innerWidth, H = innerHeight;
+      const px = (x * 0.5 + 0.5) * W, py = (-y * 0.5 + 0.5) * H;
+      // inside: point down at him; outside: point out toward him
+      const ang = inside ? 180 : Math.atan2(x * W, y * H) * 180 / Math.PI;
+      e.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`;
+      (e.firstChild as HTMLElement).style.transform = `rotate(${ang}deg)`;
+      const dist = Math.hypot(NEWTON_AT.x - (cam.position.x + origin.x), NEWTON_AT.y - (cam.position.y + origin.y), NEWTON_AT.z - (cam.position.z + origin.z));
+      if (label.current) label.current.textContent = story.waiting ? 'waiting for friends' : dist > 1000 ? `${(dist / 1000).toFixed(1)}k` : `${Math.round(dist)}`;
+    };
+    tick();
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return (
+    <div ref={el} className="newton-pointer">
+      <div className="newton-arrow" />
+      <span ref={label} />
+    </div>
+  );
+}
+
+// --- Newton got too old -------------------------------------------------------------
+
+function TooOld() {
+  useFrameTick();
+  if (!story.lostAt) return null;
+  return (
+    <div className="fallin">
+      <div className="fallin-black">
+        <div className="space-card found-newton"><NewtonFace age={NEWTON_LIMIT + 8} size={130} /><b>NEWTON · {NEWTON_LIMIT}</b></div>
+        <div className="fallin-end">
+          <h1>Too late.</h1>
+          <p>Newton grew old waiting for us.</p>
+          <p>Near the black hole our time ran slow. For him, out there, the years kept flying by.</p>
+          <button className="big" onClick={() => restartTrip()}>Try again</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -155,11 +240,11 @@ function Found() {
   const chars = current ? Array.from(current.text) : [];
   return (
     <div className="found">
-      <div className="found-newton"><NewtonFace age={story.foundAge} size={150} /><b>NEWTON · {Math.floor(story.foundAge)}</b></div>
+      <div className="space-card found-newton"><NewtonFace age={story.foundAge} size={150} /><b>NEWTON · {Math.floor(story.foundAge)}</b></div>
       {current && s < 25 && (
-        <div className={`fallin-bubble ${current.who}`} key={current.text}>
-          <div className="fallin-who">{current.who === 'newton' ? 'NEWTON' : 'EINSTEIN'}</div>
-          <span>{chars.slice(0, n).join('')}</span><span style={{ opacity: 0 }}>{chars.slice(n).join('')}</span>
+        <div className="space-card caption" key={current.text}>
+          <div className="space-who">{current.who === 'newton' ? 'NEWTON' : 'EINSTEIN'}</div>
+          <div className="space-line"><span>{chars.slice(0, n).join('')}</span><span style={{ opacity: 0 }}>{chars.slice(n).join('')}</span></div>
         </div>
       )}
       {s > 25 && (
@@ -181,7 +266,10 @@ export function StoryLayers() {
   return (
     <>
       <BlueShift />
+      <Caption />
       <NewtonPhoto />
+      <NewtonPointer />
+      <TooOld />
       <Death />
       <Found />
     </>

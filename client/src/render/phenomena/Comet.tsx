@@ -6,10 +6,9 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { place } from '../origin';
-import { COMET } from '../../play/story';
-import { OPEN } from '../../play/onfoot';
+import { COMET, TWIN_STAR } from '../../play/story';
 
-const STAR = new THREE.Vector3(OPEN.x + 470, OPEN.y + 230, OPEN.z - 1180); // the twin stars light it
+const STAR = new THREE.Vector3(TWIN_STAR.x, TWIN_STAR.y, TWIN_STAR.z); // the twin stars light it
 
 const TAIL_VERT = /* glsl */ `
 varying vec2 vUv;
