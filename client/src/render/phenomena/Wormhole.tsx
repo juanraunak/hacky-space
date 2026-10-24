@@ -1,9 +1,12 @@
-// A wormhole mouth as a lens shell. Cheap analytic stand-in for the
-// Ellis-wormhole ray tracing of James et al. 2015 (noted in DECISIONS.md):
-// rays whose impact parameter b is inside the throat radius see the other
-// sky, turned by an angle that grows to pi at the centre; rays outside are
-// lensed toward the mouth, tapering to nothing at the shell edge. A soft
-// swirling rim marks the throat.
+// A wormhole mouth, Interstellar style: a perfect sphere showing a different
+// piece of sky (the other side), with the sky around it lensed into rings and
+// the far side squeezed toward the rim. Each pixel integrates its light ray
+// through the James et al. 2015 wormhole metric (arXiv:1502.03809; see
+// wormholeGlsl.ts). A thin blue-white rim and a slow swirl mark the doorway,
+// and a small glow keeps the mouth findable from across the system.
+//
+// Both mouths beat slowly (rim and far glow), each on its own clock: the exit
+// mouth sits deep beside a heavy mass, so its heartbeat is visibly slower.
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
@@ -11,96 +14,56 @@ import * as THREE from 'three';
 import type { Body } from '../../universe/bodies';
 import { place } from '../origin';
 import { sky, NOISE_GLSL } from '../sky';
+import { LAPTOP, Q } from '../quality';
 import { PHYSICS_FX } from '../../game/constants';
+import { game } from '../../play/game';
+import { field } from '../../relativity/physics';
+import { WH_SHELL, whL, wormholeLensFrag, LENS_VERT, BEACON_VERT, BEACON_FRAG } from './wormholeGlsl';
 
-const SHELL = 3; // shell radius in throat radii
+const FRAG = wormholeLensFrag({
+  steps: LAPTOP ? 100 : 40,
+  k: LAPTOP ? 0.1 : 0.22,
+  oct: LAPTOP ? 3 : 2,
+  bias: 0,
+  cube: Q.cube,
+  aniso: LAPTOP ? 4 : 2,
+  noise: NOISE_GLSL,
+});
+const L_SHELL = whL(WH_SHELL);
+const BEAT_S = 2.6; // heartbeat period in the mouth's own seconds
+const BEACON_PX = 22; // far glow radius, CSS pixels
+// The far glow is full while the mouth looks smaller than this (CSS px of
+// throat radius) and gone once it looks bigger than BEACON_OFF.
+const BEACON_ON = 8;
+const BEACON_OFF = 30;
 
-const VERT = /* glsl */ `
-varying vec3 vWorld;
-varying vec3 vCenter;
-void main() {
-  vec4 w = modelMatrix * vec4(position, 1.0);
-  vWorld = w.xyz;
-  vCenter = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-  gl_Position = projectionMatrix * viewMatrix * w;
+const tmpCam = new THREE.Vector3();
+const tmpCtr = new THREE.Vector3();
+const tmpBuf = new THREE.Vector2();
+
+const smooth = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+/** dtau/dt at this mouth (the game's own clock law, from its site's bodies). */
+function mouthRate(body: Body): number {
+  const poi = game.world?.pois.find(p => p.crewId === body.poi);
+  return poi ? field(body, poi.bodies).gravRate : 1;
 }
-`;
-
-const FRAG = /* glsl */ `
-precision highp float;
-varying vec3 vWorld;
-varying vec3 vCenter;
-uniform samplerCube uHere;
-uniform samplerCube uThere;
-uniform float uHasHere;
-uniform float uHasThere;
-uniform float uRho;
-uniform float uR;
-uniform float uTime;
-uniform float uFx;
-uniform float uSeed;
-
-#define PI 3.14159265
-
-${NOISE_GLSL}
-
-vec3 hereCol(vec3 d) { return uHasHere > 0.5 ? textureLod(uHere, d, 0.0).rgb : vec3(0.0); }
-vec3 thereCol(vec3 d) { return uHasThere > 0.5 ? textureLod(uThere, d, 0.0).rgb : vec3(0.0); }
-
-void main() {
-  vec3 ro = cameraPosition - vCenter;
-  vec3 rd = normalize(vWorld - cameraPosition);
-  float tc = -dot(ro, rd);
-  vec3 pc = ro + rd * tc;
-  float b = length(pc);
-  vec3 toC = b > 1e-4 * uRho ? -pc / b : vec3(0.0);
-  float rho = uRho;
-  float camR = length(ro);
-
-  vec3 col;
-  if (camR < rho) {
-    // Camera inside the throat: all the other side.
-    col = thereCol(rd);
-  } else if (b < rho && tc > 0.0) {
-    // Through the throat: turned about (rd x toC) by pi (1 - b/rho).
-    float th = PI * (1.0 - b / rho) * uFx;
-    vec3 d = normalize(rd * cos(th) + toC * sin(th));
-    col = thereCol(d);
-  } else {
-    float ahead = 0.5 * (1.0 + tc / sqrt(tc * tc + b * b + 1e-6));
-    float a = 2.0 * pow(rho / max(b, rho), 2.0) * 1.2 * uFx;
-    a = min(a, PI) * (1.0 - smoothstep(rho, uR, b)) * ahead;
-    vec3 d = normalize(rd * cos(a) + toC * sin(a));
-    col = hereCol(d);
-  }
-
-  // Swirling rim at b ~ rho.
-  if (tc > 0.0 && camR >= rho) {
-    vec3 fw = normalize(-ro);
-    vec3 e1 = normalize(abs(fw.y) < 0.95 ? cross(fw, vec3(0.0, 1.0, 0.0)) : cross(fw, vec3(1.0, 0.0, 0.0)));
-    vec3 e2 = cross(fw, e1);
-    float phi = atan(dot(pc, e2), dot(pc, e1));
-    float x = (b - rho) / rho;
-    float ring = exp(-x * x / 0.012);
-    float spiral = phi * 3.0 + log(max(b, 1e-3) / rho) * 9.0 - uTime * 1.4;
-    float s = 0.5 + 0.5 * sin(spiral);
-    float nz = fbm(vec3(cos(phi) * 2.0, sin(phi) * 2.0, x * 6.0 + uTime * 0.25) + uSeed, 4);
-    float glow = ring * (0.35 + 0.65 * s) * (0.6 + 0.8 * nz);
-    col += vec3(0.62, 0.8, 1.0) * 2.0 * glow;
-  }
-
-  float op = camR < rho ? 1.0 : 1.0 - smoothstep(rho * 1.6, uR, b);
-  gl_FragColor = vec4(col, op);
-}
-`;
 
 export function Wormhole({ body }: { body: Body }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const group = useRef<THREE.Group>(null);
+  const lens = useRef<THREE.Mesh>(null);
+  const glow = useRef<THREE.Mesh>(null);
   const skyVer = useRef(-1);
-  const mouthRef = useRef<Body['mouth']>(undefined);
-  const geo = useMemo(() => new THREE.SphereGeometry(1, 48, 32), []);
+  const mouthRef = useRef<Body['mouth'] | null>(null);
+  const clock = useRef({ key: '\u0000', rate: 1, t: 0 });
+
+  const geo = useMemo(() => new THREE.SphereGeometry(1, LAPTOP ? 64 : 40, LAPTOP ? 40 : 24), []);
+  const quad = useMemo(() => new THREE.PlaneGeometry(2, 2), []);
   const mat = useMemo(() => new THREE.ShaderMaterial({
-    vertexShader: VERT,
+    vertexShader: LENS_VERT,
     fragmentShader: FRAG,
     side: THREE.BackSide,
     depthWrite: false,
@@ -113,38 +76,96 @@ export function Wormhole({ body }: { body: Body }) {
       uHasHere: { value: 0 },
       uHasThere: { value: 0 },
       uRho: { value: 1 },
-      uR: { value: SHELL },
-      uTime: { value: 0 },
+      uShell: { value: WH_SHELL },
+      uLShell: { value: L_SHELL },
+      uLCam: { value: -L_SHELL },
+      uSwirl: { value: 0 },
+      uSpin: { value: 1 },
+      uPulse: { value: 0 },
       uFx: { value: PHYSICS_FX },
       uSeed: { value: 0 },
     },
   }), []);
+  const beacon = useMemo(() => new THREE.ShaderMaterial({
+    vertexShader: BEACON_VERT,
+    fragmentShader: BEACON_FRAG,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    uniforms: {
+      uRes: { value: new THREE.Vector2(1, 1) },
+      uPx: { value: BEACON_PX },
+      uI: { value: 0 },
+    },
+  }), []);
 
-  useEffect(() => () => { mat.dispose(); geo.dispose(); }, [mat, geo]);
+  useEffect(() => () => { mat.dispose(); beacon.dispose(); geo.dispose(); quad.dispose(); }, [mat, beacon, geo, quad]);
 
-  useFrame(({ clock }) => {
-    const m = meshRef.current;
+  // Where the camera sits in the metric, read at draw time so it never lags
+  // the camera rig. Only used while the camera is inside the shell.
+  useEffect(() => {
+    const m = lens.current;
     if (!m) return;
-    place(m, body);
+    const u = mat.uniforms;
+    m.onBeforeRender = (_r, _s, camera) => {
+      tmpCam.setFromMatrixPosition(camera.matrixWorld);
+      tmpCtr.setFromMatrixPosition(m.matrixWorld);
+      u.uLCam.value = -whL(tmpCam.distanceTo(tmpCtr) / Math.max(body.radius, 1e-3));
+    };
+    return () => { m.onBeforeRender = () => {}; };
+  }, [body, mat]);
+
+  useFrame(({ camera, size, gl }, dt) => {
+    const g = group.current, m = lens.current, s = glow.current;
+    if (!g || !m || !s) return;
+    place(g, body);
     const rho = Math.max(body.radius, 1e-3);
-    m.scale.setScalar(rho * SHELL);
+    m.scale.setScalar(rho * WH_SHELL);
     const u = mat.uniforms;
     if (skyVer.current !== sky.version || mouthRef.current !== body.mouth) {
       skyVer.current = sky.version;
       mouthRef.current = body.mouth;
-      // Outside we always see sky A; through the throat, the other sky.
+      // Around either mouth is our sky; through the entry, sky B; back
+      // through the exit, sky A.
       const there = body.mouth === 'exit' ? sky.a : sky.b;
       u.uHere.value = sky.a;
       u.uThere.value = there;
       u.uHasHere.value = sky.a ? 1 : 0;
       u.uHasThere.value = there ? 1 : 0;
+      u.uSeed.value = (body.seed % 1000) * 0.113;
+      u.uSpin.value = body.seed % 2 === 0 ? 1 : -1;
     }
+
+    // The mouth's own clock.
+    const c = clock.current;
+    if (c.key !== game.worldKey) { c.key = game.worldKey; c.rate = mouthRate(body); }
+    c.t += Math.min(Math.max(dt, 0), 0.1) * c.rate;
+    const beat = Math.sin((c.t / BEAT_S) * Math.PI * 2);
     u.uRho.value = rho;
-    u.uR.value = rho * SHELL;
-    u.uTime.value = clock.elapsedTime;
+    u.uSwirl.value = c.t;
+    u.uPulse.value = beat;
     u.uFx.value = PHYSICS_FX;
-    u.uSeed.value = (body.seed % 1000) * 0.113;
+
+    // The far glow gives way to the real mouth as it grows on screen.
+    tmpCam.setFromMatrixPosition(camera.matrixWorld);
+    const d = Math.max(tmpCam.distanceTo(g.position), 1e-3);
+    const fov = camera instanceof THREE.PerspectiveCamera ? camera.fov : 60;
+    const px = (rho / d) * (size.height / 2) / Math.tan((fov * Math.PI) / 360);
+    const on = 1 - smooth(BEACON_ON, BEACON_OFF, px);
+    s.visible = on > 0.002;
+    const bu = beacon.uniforms;
+    bu.uI.value = on * (0.82 + 0.18 * beat);
+    gl.getDrawingBufferSize(tmpBuf);
+    (bu.uRes.value as THREE.Vector2).copy(tmpBuf);
+    bu.uPx.value = BEACON_PX * gl.getPixelRatio();
   });
 
-  return <mesh ref={meshRef} geometry={geo} material={mat} renderOrder={-10} />;
+  return (
+    <group ref={group}>
+      <mesh ref={lens} geometry={geo} material={mat} renderOrder={-10} />
+      <mesh ref={glow} geometry={quad} material={beacon} renderOrder={-9} frustumCulled={false} />
+    </group>
+  );
 }

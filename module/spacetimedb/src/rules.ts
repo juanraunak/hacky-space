@@ -28,7 +28,8 @@ export const CREW_NAMES = [
 ];
 
 export const OTHER_POIS = ['pulsar', 'wormhole'];
-export const ALL_POIS = ['black_hole', 'dark_matter', ...OTHER_POIS];
+// Three phenomena only (Juan, 24 Oct): black hole, pulsar, wormhole.
+export const ALL_POIS = ['black_hole', ...OTHER_POIS];
 // A compact system: rescue sites sit between these distances (units).
 export const NEAR_SITE = 700;
 export const FAR_SITE = [1300, 1500, 1700, 1900, 2100, 2300];
@@ -74,9 +75,8 @@ export function planCrew(seed: number, pilots: number): CrewPlan[] {
   const n = 2 * p;
   const rand = mulberry32(seed ^ 0x5eed);
 
-  // Black hole and dark matter always; then every other kind once before any
-  // repeats, then whole shuffled cycles of all six.
-  const kinds = ['black_hole', 'dark_matter', ...shuffled(OTHER_POIS, rand)];
+  // Black hole, pulsar, wormhole in that order; then whole shuffled cycles.
+  const kinds = ['black_hole', 'pulsar', 'wormhole'];
   while (kinds.length < n) kinds.push(...shuffled(ALL_POIS, rand));
   kinds.length = n;
 

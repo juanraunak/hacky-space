@@ -6,7 +6,8 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import { ShipBody, Cockpit } from './ship';
+import { Cockpit } from './ship';
+import { ShipBody } from './shipBody';
 import { VoxelChar, crewModel } from './VoxelChar';
 import { view } from '../play/view';
 import { fx } from '../cutscenes/cutscenes';
