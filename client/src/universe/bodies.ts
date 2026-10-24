@@ -209,7 +209,8 @@ export function makeWorld(seed: number, sites: CrewSite[]): World {
     for (const b of poi.bodies) reserve(b, 1);
   }
   const lanes = pois.filter(p => p.kind === 'black_hole').map(p => ({ a: v(), b: p.bodies[0] as Vec }));
-  const core = [body({ id: 'sun', kind: 'sun', x: 0, y: 0, z: 0, radius: SUN.radius, gm: SUN.gm, clockRs: SUN.clockRs, temp: SUN.temp, seed })];
+  // No sun: empty space, only the phenomena.
+  const core: Body[] = [];
   return { seed, sites, pois, reserved, lanes, core };
 }
 

@@ -9,6 +9,7 @@ import { sayExact, FINAL_LINE } from '../play/einstein';
 import { mothershipFx } from '../render/craft';
 import { MOTHERSHIP, INTRO_S } from '../game/constants';
 import { bridgeLocal } from '../render/Bridge';
+import { OPEN } from '../render/Opening';
 import { add, mul, norm, sub, v, type Vec } from '../universe/bodies';
 import { audio } from '../audio/audio';
 import { view } from '../play/view';
@@ -71,84 +72,37 @@ function firstHole() {
 
 function introShot(t: number): Shot {
   resetBridge();
-  fx.anger = t < 8 ? 0.35 + t * 0.05 : t < 11 ? 1 : 0.6;
-  fx.shockwave = t >= 10.6 ? t - 10.6 : -1;
-  fx.whiteout = t > 9.7 && t < 11.2 ? 1 - Math.abs(t - 10.4) / 0.8 : 0;
-  mothershipFx.damaged = t > 10.5;
-  once('i1', () => sayExact("Beautiful, isn't she? A little restless today."));
-  if (t > 5.6) once('i2', () => sayExact('Hm. That flare is... larger than I expected.'));
-  if (t > 8.6) once('i3', () => { sayExact('Hold on to something!'); audio.thud(1); });
-  if (t > 10.4) once('i4', () => { audio.thud(1); audio.whoosh(); });
-  if (t > 13) once('i5', () => sayExact('Everyone, report! ...Anyone?'));
-  if (t > 24) once('i6', () => sayExact('I can see your beacons. Every one of you. Hold on, I am coming through on your screen.'));
-
-  if (t < 10.5) {
-    // On the bridge: Einstein at the window, the swollen red star outside.
-    fx.bridge = true; fx.bridgeAll = true; fx.einsteinOnBridge = true;
-    mothershipFx.visible = false;
-    // He faces you first; as the flare builds he turns back to the glass.
-    fx.einsteinTurn = 1 - ease((t - 7) / 1.2) * 0.75;
-    fx.einsteinLooks = t < 7.2;
-    fx.alarm = t > 8.6 ? 1 : 0;
-    fx.shake = t > 8.6 ? Math.min(1, (t - 8.6) / 1.2) : 0;
-    fx.crewFall = ease((t - 9.2) / 0.9);
-    const shake = fx.shake * 0.12;
-    const k = ease(t / 7);
-    const pos = add(B(1.6 + k * 1.4, 0.15 + k * 0.4, -3.2 + k * 4.5), v(Math.sin(t * 40) * shake, Math.sin(t * 33) * shake, 0));
-    return { pos, look: lerp(B(0, -0.1, -6.5), B(0, 0, -8.5), ease((t - 6.5) / 2)), fov: 42 + k * 10 };
-  }
-  mothershipFx.visible = true;
-  if (t < 15) {
-    // The shockwave, then the pods streak away.
-    const k = ease((t - 10.5) / 4.5);
-    return { pos: add(MS, v(-60 - k * 60, 25 + k * 30, 120 + k * 80)), look: add(MS, v(0, 0, 40 + k * 200)), fov: 60 };
-  }
-  const hole = firstHole();
-  if (t < 23 && hole) {
-    // Follow one pod past a black hole: the stars bend around it.
-    const bh = hole.poi.bodies[0];
-    const toPod = norm(sub(hole.poi.podStart, bh));
-    const side = norm({ x: toPod.z, y: 0.4, z: -toPod.x });
-    const k = ease((t - 15) / 8);
-    const pos = add(bh, add(mul(toPod, bh.rs * (9 - k * 3)), mul(side, bh.rs * (5 - k * 2))));
-    return { pos, look: lerp(introPod(hole.crew.id, t) ?? bh, bh, 0.5), fov: 55 };
-  }
-  // Your cockpit: his hologram flickers on.
-  fx.forceCockpit = t < 28.5;
-  return fx.forceCockpit ? cockpitShot() : chaseShot(1);
+  mothershipFx.visible = false;
+  fx.anger = 0; fx.shockwave = -1; fx.whiteout = 0;
+  const A = (x: number, y: number, z: number) => v(OPEN.x + x, OPEN.y + y, OPEN.z + z);
+  if (t > 3.5) once('o1', () => sayExact('Gravity is a pull, Albert. An invisible rope between all things.', 'NEWTON'));
+  if (t > 8) once('o2', () => sayExact('No rope, Isaac. Space itself bends. Watch.'));
+  if (t > 12.5) once('o3', () => sayExact('See? The marble is not pulled. It just follows the curve.'));
+  if (t > 15.5) once('o4', () => sayExact('And down in the dip... time itself runs slower.'));
+  if (t > 18.8) once('o5', () => { sayExact('Albert... it is getting heavier!', 'NEWTON'); audio.thud(0.7); });
+  if (t > 20.8) once('o6', () => { sayExact('Isaac! Hold on!'); audio.whoosh(); });
+  if (t > 24.3) once('o7', () => sayExact('It took him. Pilot, we are going after Isaac. I will ride with you.'));
+  fx.forceCockpit = t >= 24 && t < 28.5;
+  if (t < 4) { const k = ease(t / 4); return { pos: A(0, 7 - k * 4, 62 - k * 36), look: A(0, -3, -4), fov: 50 }; }
+  if (t < 14.5) { const k = ease((t - 4) / 10.5); return { pos: A(2 - k * 4, 1.4, 15 - k * 2), look: A(0, -2.6 - k * 2, -1 - k * 6), fov: 46 }; }
+  if (t < 19) return { pos: A(10, 5, 10), look: A(-3, -6, -8), fov: 52 };
+  if (t < 24) { const k = ease((t - 19) / 5); return { pos: A(-4 + k * 4, 10 - k * 2, 28 - k * 4), look: A(0, -7, -11), fov: 52 }; }
+  if (t < 28.5) return cockpitShot();
+  return chaseShot(1);
 }
 
 // --- ending -----------------------------------------------------------------
 
 function endingShot(t: number): Shot {
   resetBridge();
-  const einstein = net.crew().find(c => c.isEinstein);
-  const home = einstein?.status === 'home';
-  fx.bigPortrait = false;
-  if (t < 8) {
-    // The bridge: everyone who came home. Einstein walks in and tells you.
-    fx.bridge = true;
-    mothershipFx.visible = false;
-    fx.einsteinOnBridge = home;
-    fx.einsteinTurn = 1;
-    fx.einsteinLooks = true;
-    fx.einsteinAt = { x: 0, z: 7 - ease(t / 2.2) * 6 };
-    if (home && t > 2) once('e1', () => sayExact(FINAL_LINE));
-    if (t < 2.2) return { pos: B(0, 1.2, -7.5), look: B(0, -0.5, 4), fov: 60 };
-    const k = ease((t - 2.2) / 5);
-    return { pos: B(0.6, 0.1, -2.5 + k * 1.2), look: B(0, -0.1 + 0.0, 1), fov: 46 - k * 6 };
-  }
-  // The mothership jumps: stretch and flash. Then the star goes.
-  mothershipFx.visible = t < 10.5;
-  mothershipFx.stretch = t < 8.5 ? 1 : t < 10.5 ? 1 + Math.pow((t - 8.5) / 2, 3) * 40 : 1;
-  if (t > 10.4) once('e2', () => audio.whoosh());
-  fx.whiteout = Math.max(t > 10.3 && t < 11.3 ? 1 - Math.abs(t - 10.6) / 0.7 : 0, t > 19.5 ? Math.min(1, (t - 19.5) / 2) : 0);
-  fx.supernova = t > 11 ? t - 11 : -1;
-  fx.anger = t < 11 ? 1 : 0;
-  if (t > 11) once('e3', () => audio.swell());
-  if (t < 11) return { pos: add(MS, v(70, 20, 140)), look: MS, fov: 55 };
-  const k = ease((t - 11) / 8);
-  return { pos: v(0, 400 + k * 600, 2600 + k * 1800), look: v(0, 0, 0), fov: 55 };
+  mothershipFx.visible = false;
+  fx.supernova = -1; fx.anger = 0; fx.shockwave = -1;
+  if (t > 1) once('e1', () => sayExact(FINAL_LINE));
+  fx.whiteout = t > 9 ? Math.min(1, (t - 9) / 1.5) : 0;
+  // a slow pull-back from your ship into the stars
+  const c = chaseShot(0);
+  const k = ease(t / 10);
+  return { pos: v(c.pos.x, c.pos.y + k * 30, c.pos.z + k * 60), look: ship.pos, fov: 55 };
 }
 
 // --- chase ------------------------------------------------------------------

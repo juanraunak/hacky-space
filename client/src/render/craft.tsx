@@ -278,55 +278,24 @@ export function Tethers() {
 
 export const mothershipFx = { stretch: 1, visible: true, damaged: false };
 
+/** Home: no mothership any more, just a glowing ring to fly into. */
 export function Mothership() {
   const ref = useRef<THREE.Group>(null);
-  const windows = useMemo(() => emissive('#ffd9a0', 2.5), []);
-  const ring = useMemo(() => emissive('#5fd7ff', 4), []);
-  const engineGlow = useMemo(() => emissive('#8fc8ff', 1.6), []);
-  const scorch = useMemo(() => new THREE.MeshStandardMaterial({ color: '#15110e', roughness: 1, metalness: 0 }), []);
-  const winGeo = useMemo(() => {
-    const m = new THREE.InstancedMesh(new THREE.BoxGeometry(0.8, 0.5, 0.1), windows, 160);
-    const o = new THREE.Object3D();
-    for (let i = 0; i < 160; i++) {
-      const a = (i % 16) / 16 * Math.PI * 2, zz = -50 + Math.floor(i / 16) * 10;
-      o.position.set(Math.cos(a) * 9.1, Math.sin(a) * 9.1, zz);
-      o.lookAt(Math.cos(a) * 20, Math.sin(a) * 20, zz);
-      o.updateMatrix();
-      m.setMatrixAt(i, o.matrix);
-    }
-    return m;
-  }, [windows]);
+  const ring = useMemo(() => emissive('#5fd7ff', 3), []);
+  const halo = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 0.9, 1.4), transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), []);
   useFrame(({ clock }) => {
     const g = ref.current;
     if (!g) return;
-    place(g, MOTHERSHIP);
-    g.scale.set(1 / Math.sqrt(mothershipFx.stretch), 1 / Math.sqrt(mothershipFx.stretch), mothershipFx.stretch);
-    g.visible = mothershipFx.visible;
-    ring.color.setRGB(1.2, 3.6 + Math.sin(clock.elapsedTime * 2) * 0.8, 4.5);
+    place(g, DOCK);
+    g.visible = mothershipFx.visible !== false || true;
+    const p = 0.8 + Math.sin(clock.elapsedTime * 1.6) * 0.2;
+    ring.color.setRGB(0.6 * p * 3, 2.2 * p * 1.4, 3 * p * 1.2);
+    g.rotation.y = clock.elapsedTime * 0.1;
   });
   return (
     <group ref={ref}>
-      <mesh material={hull} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[9, 9, 110, Q.sphereSeg / 2]} /></mesh>
-      <primitive object={winGeo} />
-      <mesh material={dark} position={[0, 0, -62]}><sphereGeometry args={[11, 24, 16]} /></mesh>
-      {[-35, 0, 35].map(z => (
-        <mesh key={z} material={dark} position={[0, 0, z]}><torusGeometry args={[18, 1.6, 10, 48]} /></mesh>
-      ))}
-      {[0, 1, 2, 3].map(i => (
-        <mesh key={i} material={hull} position={[0, 0, -35]} rotation={[0, 0, (i * Math.PI) / 2]}><boxGeometry args={[36, 1.2, 1.2]} /></mesh>
-      ))}
-      <mesh material={dark} position={[0, 14, -10]}><boxGeometry args={[6, 10, 18]} /></mesh>
-      <mesh material={glass} position={[0, 17, -19.2]}><boxGeometry args={[5, 2.2, 0.4]} /></mesh>
-      {mothershipFx.damaged && <mesh material={scorch} position={[6, 3, 18]}><sphereGeometry args={[5, 12, 10]} /></mesh>}
-      {/* engines */}
-      {[[-5, 0], [5, 0], [0, 5], [0, -5]].map(([x, y], i) => (
-        <mesh key={i} material={engineGlow} position={[x, y, 56]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[1.6, 1.6, 1, 16]} /></mesh>
-      ))}
-      {/* the dock ring */}
-      <group position={[DOCK_OFFSET.x, DOCK_OFFSET.y, DOCK_OFFSET.z]}>
-        <mesh material={ring}><torusGeometry args={[14, 0.5, 8, 64]} /></mesh>
-        <mesh material={dark}><torusGeometry args={[14, 1.4, 8, 48]} /></mesh>
-      </group>
+      <mesh material={ring}><torusGeometry args={[14, 0.35, 10, 96]} /></mesh>
+      <mesh material={halo}><torusGeometry args={[14, 1.6, 8, 64]} /></mesh>
     </group>
   );
 }

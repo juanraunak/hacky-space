@@ -60,6 +60,7 @@ const BIG = new Set(['home', 'nearly']);
 export const FINAL_LINE = 'Time is not the same for everyone. It depends on where you are, and how fast you move. You just proved it.';
 
 export const comms = {
+  who: 'EINSTEIN',
   line: '',
   shownAt: 0,
   lastAt: -1e9,
@@ -77,13 +78,15 @@ export function say(key: string, force = false) {
   if (options.length === 0) return;
   const line = options[Math.floor(Math.random() * options.length)];
   comms.used.add(line);
+  comms.who = 'EINSTEIN';
   comms.line = line;
   comms.shownAt = now;
   comms.lastAt = now;
 }
 
 /** Show a specific line (cutscenes). */
-export function sayExact(line: string) {
+export function sayExact(line: string, who = 'EINSTEIN') {
+  comms.who = who;
   comms.line = line;
   comms.shownAt = performance.now() / 1000;
 }

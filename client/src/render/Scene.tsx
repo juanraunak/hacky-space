@@ -14,7 +14,7 @@ import { SkyBaker } from './sky';
 import { Starfield } from './Starfield';
 import { FarMarkers } from './FarMarkers';
 import { LocalShip, RemoteShips, Pods, Tethers, Mothership } from './craft';
-import { Bridge } from './Bridge';
+import { Opening } from './Opening';
 import { Gates } from './Gates';
 import { GameLoop, CameraRig } from './CameraRig';
 import { camWorld, origin } from './origin';
@@ -184,18 +184,15 @@ function World3D() {
       {on('sky') && <SkyBaker seed={run.seed} />}
       {on('stars') && <Starfield seed={run.seed} />}
       {on('far') && <FarMarkers world={world} />}
-      {on('sun') && <Sun world={world} />}
       {on('pois') && world.pois.flatMap(p => p.bodies).map(b => <BodyView key={b.id} body={b} />)}
       {on('chunks') && <ChunkStreamer world={world} />}
       {on('ms') && <Mothership />}
-      <Bridge />
+      <Opening />
       {on('pods') && <Pods override={pods} />}
       <Tethers />
       {on('ship') && <LocalShip />}
       <RemoteShips />
       <Gates />
-      <Shockwave />
-      <SupernovaLayer />
     </>
   );
 }

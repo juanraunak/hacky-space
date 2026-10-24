@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { VoxelChar } from './VoxelChar';
+import { Figure } from './Figures';
 import { drawDials, type Dial } from '../hud/dials';
 import { comms } from '../play/einstein';
 import { game, ship } from '../play/game';
@@ -54,39 +54,28 @@ export function dialsNow(): Dial[] {
 }
 
 export function Cockpit() {
-  const dials = useDialTexture();
   const camera = useThree(s => s.camera);
   const talk = useRef(0);
   const look = useRef<THREE.Vector3 | null>(new THREE.Vector3());
-  const screen = useMemo(() => new THREE.MeshBasicMaterial({ map: dials, toneMapped: false, transparent: true }), [dials]);
-  const glow = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(0.3, 1.6, 2.4), toneMapped: false, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }), []);
-  const cone = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 0.9, 1.4), toneMapped: false, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), []);
-  useEffect(() => () => { dials.dispose(); }, [dials]);
   useFrame(() => {
     const age = performance.now() / 1000 - comms.shownAt;
-    const want = comms.line && age < 5.5 ? 1 : 0;
+    const want = comms.line && age < 5.5 && comms.who === 'EINSTEIN' ? 1 : 0;
     talk.current += (want - talk.current) * 0.1;
     camera.getWorldPosition(look.current!);
   });
   return (
     <group>
-      {/* dashboard */}
-      <mesh material={darkMat} position={[0, 0.12, -1.4]} rotation={[-0.5, 0, 0]}><boxGeometry args={[1.5, 0.08, 0.55]} /></mesh>
-      <mesh material={panelMat} position={[0, -0.05, -1.45]}><boxGeometry args={[1.5, 0.3, 0.5]} /></mesh>
-      <mesh material={screen} position={[-0.2, 0.2, -1.32]} rotation={[-0.5, 0, 0]}><planeGeometry args={[0.78, 0.3]} /></mesh>
-      {/* canopy frame */}
+      {/* dashboard and canopy frame */}
+      <mesh material={darkMat} position={[0, 0.12, -1.4]} rotation={[-0.5, 0, 0]}><boxGeometry args={[1.9, 0.08, 0.55]} /></mesh>
+      <mesh material={panelMat} position={[0, -0.05, -1.45]}><boxGeometry args={[1.9, 0.3, 0.5]} /></mesh>
       {[-1, 1].map(s => (
-        <mesh key={s} material={darkMat} position={[s * 0.62, 0.5, -1.25]} rotation={[0.25, 0, s * 0.45]}><boxGeometry args={[0.05, 0.85, 0.05]} /></mesh>
+        <mesh key={s} material={darkMat} position={[s * 0.8, 0.5, -1.25]} rotation={[0.25, 0, s * 0.45]}><boxGeometry args={[0.05, 0.85, 0.05]} /></mesh>
       ))}
-      <mesh material={darkMat} position={[0, 0.88, -1.15]} rotation={[0.9, 0, 0]}><boxGeometry args={[0.9, 0.04, 0.05]} /></mesh>
-      <mesh material={darkMat} position={[0, 0.75, 0.2]}><boxGeometry args={[1.6, 0.06, 0.06]} /></mesh>
-      {/* Einstein, live from his pod as a hologram on the dash */}
-      <group position={[0.42, 0.18, -1.3]}>
-        <mesh material={glow} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.13, 24]} /></mesh>
-        <mesh material={cone} position={[0, 0.24, 0]}><cylinderGeometry args={[0.16, 0.12, 0.48, 20, 1, true]} /></mesh>
-        <group rotation={[0, -0.35, 0]}>
-          <VoxelChar src="/characters/einstein.json" mode="hologram" talk={talk} lookAt={look} height={0.46} />
-        </group>
+      <mesh material={darkMat} position={[0, 0.88, -1.15]} rotation={[0.9, 0, 0]}><boxGeometry args={[1.1, 0.04, 0.05]} /></mesh>
+      {/* Einstein in the co-pilot seat, turned toward you */}
+      <mesh material={darkMat} position={[0.62, -0.25, -0.55]}><boxGeometry args={[0.42, 0.5, 0.42]} /></mesh>
+      <group position={[0.62, -0.35, -0.62]} rotation={[0, -0.75, 0]}>
+        <Figure who="einstein" talk={talk} lookAt={look} scale={0.42} />
       </group>
     </group>
   );

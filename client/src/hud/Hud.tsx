@@ -104,22 +104,12 @@ function Comms() {
   const now = performance.now() / 1000;
   const age = now - comms.shownAt;
   const show = comms.line && age < 5.5;
-  const einstein = net.crew().find(c => c.isEinstein);
-  const typed = show ? comms.line.slice(0, Math.floor(age * 45)) : '';
-  if (fx.bigPortrait) {
-    return (
-      <div className="finale">
-        <img src="/einstein-ending.jpg" alt="Einstein" />
-        <p>{comms.line.slice(0, Math.floor(age * 30))}</p>
-      </div>
-    );
-  }
   if (!show) return null;
+  const typed = comms.line.slice(0, Math.floor(age * 45));
   return (
-    <div className={`comms ${einstein?.status === 'lost' ? 'static' : ''}`}>
-      <img src="/einstein-comms.jpg" alt="Einstein" />
+    <div className={`comms ${comms.who === 'NEWTON' ? 'newton' : ''}`}>
       <div>
-        <div className="comms-who">EINSTEIN · chief scientist</div>
+        <div className="comms-who">{comms.who}</div>
         <div className="comms-line">{typed}</div>
       </div>
     </div>
@@ -306,7 +296,7 @@ function EndScreen() {
   const run = net.run();
   const [left, setLeft] = useState(false);
   if (!room || !run || (room.phase !== 'won' && room.phase !== 'lost')) return null;
-  if (net.now() - run.endedAt < 22000) return null;
+  if (net.now() - run.endedAt < 11000) return null;
   const crew = [...net.crew()].sort((a, b) => Number(a.isEinstein) - Number(b.isEinstein) || a.slot - b.slot);
   const home = crew.filter(c => c.status === 'home').length;
   return (
