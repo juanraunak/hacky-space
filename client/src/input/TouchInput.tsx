@@ -87,8 +87,8 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
     p.x = e.clientX; p.y = e.clientY;
     p.travel += Math.hypot(dx, dy);
     if (p.role === 'move') setMove(p);
-    // phone: drag down to look up (Juan), the same on foot and flying
-    else if (!isLocked()) { input.look.x += dx; input.look.y -= dy; }
+    // phone: drag up to look up, drag down to look down (Juan), on foot and flying
+    else if (!isLocked()) { input.look.x += dx; input.look.y += dy; }
   }, [setMove]);
 
   const onUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
