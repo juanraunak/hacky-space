@@ -229,6 +229,7 @@ function stepShip(w: World, dt: number) {
     ship.u.z += (fwd.z * thrust + f.az) * h;
     const damp = Math.exp(-((!dark && input.brake ? BRAKE_K : 0) + f.drag) * h);
     ship.u.x *= damp; ship.u.y *= damp; ship.u.z *= damp;
+    if (!dark) assist(fwd, f, h);
     ship.vel = velocityFromProper(ship.u);
     ship.pos.x += ship.vel.x * h; ship.pos.y += ship.vel.y * h; ship.pos.z += ship.vel.z * h;
     collide(bodies);
@@ -339,6 +340,31 @@ function stepShip(w: World, dt: number) {
     if (ship.status === 'dark') respawnLocal();
     ship.oxygen = OXYGEN_S;
     ship.hull = 3;
+  }
+}
+
+/**
+ * Flight assist (Juan: drifting was too hard): the ship goes where it points.
+ * Sideways drift relative to the nose bleeds away quickly, and with no thrust
+ * the ship eases to a stop. Only the part of the motion that gravity is not
+ * causing is damped, so wells still pull you exactly as before (you still
+ * feel and fight the pull; you just do not skate around).
+ */
+const ASSIST_SIDE = 3.2; // per second
+const ASSIST_COAST = 0.45; // per second, only when not thrusting
+function assist(fwd: Vec, f: Field, h: number) {
+  // leave the pull alone near strong wells: that drift IS the lesson
+  const pull = Math.hypot(f.ax, f.ay, f.az);
+  const k = Math.max(0, 1 - pull / 25);
+  if (k <= 0) return;
+  const u = ship.u;
+  const along = u.x * fwd.x + u.y * fwd.y + u.z * fwd.z;
+  const sx = u.x - fwd.x * along, sy = u.y - fwd.y * along, sz = u.z - fwd.z * along;
+  const side = 1 - Math.exp(-ASSIST_SIDE * k * h);
+  u.x -= sx * side; u.y -= sy * side; u.z -= sz * side;
+  if (!input.thrust) {
+    const coast = Math.exp(-ASSIST_COAST * k * h);
+    u.x *= coast; u.y *= coast; u.z *= coast;
   }
 }
 
