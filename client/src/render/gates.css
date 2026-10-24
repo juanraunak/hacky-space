@@ -26,3 +26,5 @@
 
 /* Juan: no text on screen except the objective. */
 .bubble, .hint, .gate-howto, .status, .pull, .escape, .gate-prompt, .gate-edge { display: none !important; }
+.speed, .arrows, .crew-row, .my-clock, .team, .dials, .tether-ring, .hint, .end .dim { }
+.speed, .arrows, .crew-row, .my-clock, .team, .dials, .tether-ring, .hint { display: none !important; }

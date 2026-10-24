@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles.css';
+import './render/gates.css';
 import { net } from './net';
 import { game, ship, stepGame } from './play/game';
 import { origin, camWorld } from './render/origin';

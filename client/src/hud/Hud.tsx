@@ -13,6 +13,7 @@ import { origin } from '../render/origin';
 import { C, OXYGEN_S, POD_AIR } from '../game/constants';
 import { beamOn } from '../relativity/hazards';
 import { audio } from '../audio/audio';
+import { BossCard } from './BossCard';
 import { isTouch } from '../input/input';
 import { drawDials } from './dials';
 import { dialsNow } from '../render/ship';
@@ -348,6 +349,7 @@ export function Hud() {
         <button className="skip" onClick={() => { fx.skipped = true; }}>Skip</button>
       )}
       <Comms />
+      <BossCard />
       <button className="mute" onClick={() => setMuted(audio.toggleMute())}>{muted ? '🔇' : '🔊'}</button>
       {room?.phase === 'playing' && <button className="viewbtn" onClick={toggleView}>{view.mode === 'cockpit' ? 'OUTSIDE' : 'COCKPIT'}{isTouch() ? '' : ' (V)'}</button>}
       <EndScreen />

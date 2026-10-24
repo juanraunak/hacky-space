@@ -15,6 +15,8 @@ import { Starfield } from './Starfield';
 import { FarMarkers } from './FarMarkers';
 import { LocalShip, RemoteShips, Pods, Tethers, Mothership } from './craft';
 import { Opening } from './Opening';
+import { Nebulae3D } from './Nebulae3D';
+import { Dust } from './Dust';
 import { Gates } from './Gates';
 import { GameLoop, CameraRig } from './CameraRig';
 import { camWorld, origin } from './origin';
@@ -188,6 +190,8 @@ function World3D() {
       {on('chunks') && <ChunkStreamer world={world} />}
       {on('ms') && <Mothership />}
       <Opening />
+      <Nebulae3D world={world} />
+      <Dust />
       {on('pods') && <Pods override={pods} />}
       <Tethers />
       {on('ship') && <LocalShip />}
