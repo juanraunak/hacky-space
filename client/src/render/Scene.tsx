@@ -13,9 +13,9 @@ import * as THREE from 'three';
 import { SkyBaker } from './sky';
 import { Starfield } from './Starfield';
 import { FarMarkers } from './FarMarkers';
-import { LocalShip, RemoteShips, Pods, Tethers, Mothership, SpeedDust } from './craft';
+import { LocalShip, RemoteShips, Pods, Tethers, Mothership } from './craft';
 import { Bridge } from './Bridge';
-import { Warp } from './Warp';
+import { Gates } from './Gates';
 import { GameLoop, CameraRig } from './CameraRig';
 import { camWorld, origin } from './origin';
 import { LAPTOP, Q } from './quality';
@@ -193,8 +193,7 @@ function World3D() {
       <Tethers />
       {on('ship') && <LocalShip />}
       <RemoteShips />
-      {on('dust') && <SpeedDust />}
-      <Warp />
+      <Gates />
       <Shockwave />
       <SupernovaLayer />
     </>

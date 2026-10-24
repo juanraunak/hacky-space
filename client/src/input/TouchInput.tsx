@@ -8,7 +8,7 @@
 // With a mouse, a click asks for pointer lock and a drag looks as a floor.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { grabPointer, input, isLocked, setStick, setTouchButton, touchButtons } from './input';
+import { input, isLocked, setStick, setTouchButton, touchButtons } from './input';
 
 const STICK_RADIUS_PX = 60;
 const MOVE_ZONE = 0.45;
@@ -61,9 +61,9 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
   const onDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const el = root.current;
     if (!el) return;
-    const mouse = e.pointerType === 'mouse';
-    if (mouse && e.button !== 0) return;
-    if (mouse && !isLocked()) grabPointer();
+    // A mouse steers by its position (input.ts); only touches use this overlay.
+    if (e.pointerType === 'mouse') return;
+    const mouse = false;
     const role: Pointer['role'] = !mouse && e.clientX < el.clientWidth * MOVE_ZONE ? 'move' : 'look';
     for (const p of pointers.current.values()) if (p.role === role) return; // one pointer per role
     try { el.setPointerCapture(e.pointerId); } catch { /* moves still reach the overlay */ }

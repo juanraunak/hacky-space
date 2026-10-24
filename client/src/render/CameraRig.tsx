@@ -5,6 +5,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { stepGame, ship } from '../play/game';
+import { stepRoute } from '../play/route';
 import { cutsceneShot, chaseShot, fx } from '../cutscenes/cutscenes';
 import { camWorld, maybeRecenter, origin } from './origin';
 import { audio } from '../audio/audio';
@@ -19,6 +20,7 @@ let lastActive = '';
 export function GameLoop() {
   useFrame((_, dt) => {
     stepGame(dt);
+    stepRoute();
     const f = ship.field;
     audio.update(ship.rate, ship.thrusting ? (ship.boosting ? 2 : 1) : 0, f ? Math.min(1, f.danger + (f.deepest?.kind === 'black_hole' ? Math.max(0, 1 - f.deepestR / (f.deepest.rs * 4)) : 0)) : 0);
   }, -2);
