@@ -1,109 +1,107 @@
-# Hacky Space — the plan (v2)
+# Hacky Space — the plan (v3)
 
-**Story in one line:** Newton and Einstein are arguing about gravity in space.
-Einstein shows that space bends. Then a black hole swallows him toward its
-edge. You and Newton fly to save him: through a pulsar, through a wormhole,
-down to the black hole.
+Juan's notes this round: no voice; no rings; no "rescue" text; text boxes
+instead; be immersed; walk around a cool, well-lit ship; NPCs like Hacky's
+original Newton; space as a real 3D world (not photos); boss-style reveals at
+each phenomenon; the black hole's beautiful glow back; show time aging on the
+ship. Keep the bending spacetime lattice (he liked it) and the Webb colours.
 
 ---
 
-## The game in baby words
+## 1. The ship you walk around (the opening)
 
-Like Minecraft has **mine**, **build**, **fight**, this game has
-**3 moves**, one per place. Each move IS one idea of Einstein's.
+- You **start on your feet** inside a small, cool ship: a bridge with a big
+  window, glowing console lights, soft blue strip lights, warm lamps, a
+  pilot seat. **WASD walk, mouse looks around** (Hacky's player rig and
+  touch controls, ported).
+- **Einstein and Newton are NPCs** in Hacky's original style: toon-shaded
+  simple shapes, simple eyes, recognisable silhouettes (Newton's long coat and
+  tied-back hair, Einstein's wild white hair and moustache). They breathe and
+  turn their heads toward you. When you walk up to them, they talk in **typed
+  comic bubbles above their heads** (Hacky's ThoughtBubble). No voices.
+- They argue at the window. Outside: the star inside the **3D lattice of
+  space**, which bends toward it. Einstein's bubble: "No rope, Isaac. Look —
+  space itself bends."
+- Then it goes wrong: the star collapses into a **spinning black hole**, the
+  lattice falls into a funnel, matter spirals in, the ship shakes, the lights
+  flicker red, and **Newton is pulled out through the window**.
+- Black screen. A single text box: *"We have to find Newton."*
+- You take the pilot seat (walk to it, press E) and fly. Einstein sits beside
+  you.
 
-| Place | Your move | What it teaches (baby words) |
+## 2. Flying: a real 3D universe, no rings, no labels
+
+- **Space is a place, not a picture.** The far sky stays (deep stars, Milky
+  Way), but the Webb-coloured nebulae become **3D clouds you fly into and
+  through** (soft volumetric sprites placed in space, with parallax), plus
+  drifting dust near the ship and the odd distant planet.
+- **No rings, no arrows, no labels.** You navigate by what you see: Newton's
+  **distress beacon** is a pulsing light far away, and the phenomena on the
+  way are visible from a long way off. Einstein's text box nudges you only if
+  you're lost for a while ("I see a flashing light, there, to the left").
+- Mouse steers the ship; the ship looks cool: clean voxel hull, glowing
+  engines, cockpit lights, running lights.
+
+## 3. Boss-style arrivals
+
+When you get close to a phenomenon, the game does what big games do for a
+boss: the music swells, black bars slide in, the camera sweeps around it,
+and a big title card fades up, e.g.
+
+> **PULSAR**
+> *the dead star that keeps time*
+
+Then control returns and you deal with it. Same for **WORMHOLE** and
+**BLACK HOLE**.
+
+## 4. The three phenomena (one idea each)
+
+| Place | What you do | What it shows |
 | --- | --- | --- |
-| 🔦 **Pulsar** | **DODGE** the spinning light beams | A tiny dead star spins so fast its light sweeps like a lighthouse. Its flashes are a perfect clock. Heavy things make **time tick slower** — your clock and its clock don't match. |
-| 🌀 **Wormhole** | **SHORTCUT** through the tunnel | Space is like a sheet of paper. Fold it, poke a hole, and two far places touch. **Space can bend so much it makes a tunnel.** |
-| ⚫ **Black hole** | **SKIM** the edge and climb out sideways | Heavy things make a **dip in space**. Things don't get "pulled" — they **roll into the dip**. Near the bottom, **time almost stops**. |
+| **Pulsar** | Dodge the sweeping beams to pass it | A dead star spinning like a lighthouse; its flashes are a clock |
+| **Wormhole** | Fly into it: the shortcut to the black hole | Bent space can join two far places |
+| **Black hole** | Skim the edge, grab Newton, climb out sideways | Space dips into a funnel; time almost stops at the bottom |
 
-You always **see** the idea:
-- A glowing **grid** (the "sheet of space") that dips near heavy things.
-- **Clocks floating over everyone**, ticking at different speeds.
-- **Light curving** around heavy things.
+The **lattice of space** appears around each one, bending the real way.
 
----
+**Black hole look:** bring back the glowing, warm, beautiful disc and bloom
+from the version Juan liked, keep the real light bending, and fix the strange
+effect when the camera gets close.
 
-## How it plays, scene by scene
+## 5. Seeing time: the ship ages
 
-### Scene 1 — The argument (cutscene, ~40 s)
-Empty space. **Newton** and **Einstein** (voxel) float on a glowing grid.
-- **Newton:** "Gravity is a pull! An invisible rope between things."
-- **Einstein:** "No rope, Isaac. Watch." He puts a heavy ball on the grid —
-  **the grid sinks into a dip.**
-- He rolls a marble — it **curves around the dip** all by itself.
-  "It just follows the shape of space."
-- He shows two clocks: the one **down in the dip ticks slower.**
-- **Everything goes wrong:** the ball gets heavier and heavier, the dip
-  becomes a **black hole**, and Einstein **slides down toward the edge**,
-  his clock slowing to a crawl. "Isaac...! Come... get... me..."
-- Newton jumps into your ship: "Pilot! We must save him!"
+Time is shown on things, not numbers:
+- **Your ship ages by your own clock.** As your time passes, the hull slowly
+  gathers dust, scratches and rust; the cabin plant on the dashboard grows
+  and wilts. Fly fast or sit near the black hole and your clock slows, so
+  your ship **ages less**.
+- **Teammates' ships age by theirs**, so you see the difference flying side
+  by side.
+- **Newton**, stuck near the black hole, has barely aged when you find him,
+  while your ship looks worn. Back home, Einstein's text box says the one line
+  that names the rule.
 
-### Scene 2 — 🔦 Pulsar (play)
-- The way to the black hole goes past a **pulsar**: spinning, two beams
-  sweeping like a lighthouse.
-- **Move: DODGE.** Rings guide you. Wait for the beam to pass, then go.
-  Hit by a beam = shields down a bit (3 hits = start again at the last ring).
-- **Teach:** your floating clock and the pulsar's flash rhythm. Close to the
-  pulsar your clock ticks a little slower.
-- **Newton (co-pilot):** "Its flashes are like a heartbeat! A clock in the sky."
+## 6. Multiplayer
 
-### Scene 3 — 🌀 Wormhole (play)
-- The black hole is too far to fly to. The **grid** shows a **tunnel**.
-- **Move: SHORTCUT.** Fly into the glowing sphere (it shows a different sky
-  inside) and pop out on the other side, right near the black hole.
-- **Teach:** you see the grid fold into a tunnel; the trip takes a second
-  instead of forever.
-- **Newton:** "We... went through space itself?!"
+Everyone spawns on the same ship, walks around together, sees each other,
+then each takes a seat and flies their own ship on the same journey. Anyone
+can grab Newton.
 
-### Scene 4 — ⚫ Black hole (play, the big one)
-- Huge black hole, light bent into a ring, the grid dipping into a deep funnel.
-- Einstein's pod is stuck **near the edge**. His floating clock barely moves.
-- **Move: SKIM.** Fly **around** the dip (rings show the spiral), get close,
-  **hold E** to grab him, then climb out **sideways** — straight up is too
-  steep and you slide back down.
-- **Teach:** your clock slows as you get close; the screen shakes; the grid
-  tilts under you.
-- **Newton:** "It's not pulling us... we're sliding down the dip!"
+## 7. Text
 
-### Scene 5 — Home (cutscene, ~20 s)
-- You fly out. Einstein's clock says he was gone **2 minutes**. Yours says
-  **10 minutes**. Newton is amazed.
-- **Einstein:** "Time is not the same for everyone. It depends on where you
-  are, and how fast you move. You just proved it."
-- End screen. Play again.
+Only text boxes: comic bubbles over NPCs, and a bottom dialogue box for
+Einstein while you fly. No HUD, no dials, no voice.
 
 ---
 
-## Controls (same everywhere)
-- **Mouse** = steer. **W** = go. **S** = stop. **Shift** = boost. **E** = grab.
-- Phone: left thumb steer, buttons on the right.
-- Ship goes where it points (no sliding around), except the dips in space —
-  those drag you, on purpose.
-- **Rings** show where to go: cyan = next, gold = your goal.
+## Build order (each step pushed live and announced)
 
-## Multiplayer
-- Host makes a room, friends scan the QR, everyone flies their own ship
-  through the same scenes. Anyone can grab Einstein. Everyone sees everyone's
-  floating clock.
-
-## Look
-- Space: black, white stars, empty.
-- Each phenomenon: bright and rich (like the black hole Juan liked).
-- The grid: thin glowing lines — the star of the show.
-- Rings: neon. Ship, Newton, Einstein: simple clean voxels.
-
----
-
-## Build order (each step pushed live with a link)
-1. **The grid + floating clocks** (the teaching tools everything uses).
-2. **Scene 1** — Newton & Einstein cutscene (need a voxel Newton: Hacky has
-   Newton-era characters; else generate one, ~5 cents).
-3. **One run = Pulsar → Wormhole → Black hole**, rings leading through all
-   three, Einstein's pod at the black hole.
-4. **Newton as co-pilot** with one line per place; **Scene 5** ending.
-5. **Polish**: beams timing, brighter phenomena, sound.
-
-**Cut:** mothership, sun, crew Kai/Mia/Jay (Einstein is the one you save),
-dials, speed lines, dark matter.
+1. **Remove** voice, rings, rescue text. Text boxes in. *(voice already off)*
+2. **The walkable ship** with Hacky-style NPCs, comic bubbles and good
+   lighting; the collapse event; black screen; take the seat.
+3. **Black hole glow back**, close-up artifact fixed.
+4. **Boss-style arrival cards.**
+5. **3D nebulae and dust** you fly through.
+6. **Ship aging** by your own clock.
+7. **The journey**: pulsar → wormhole → black hole → Newton, with a distress
+   beacon to follow.

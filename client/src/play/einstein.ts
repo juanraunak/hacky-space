@@ -78,7 +78,6 @@ export function say(key: string, force = false) {
   if (options.length === 0) return;
   const line = options[Math.floor(Math.random() * options.length)];
   comms.used.add(line);
-  speak(line, 'EINSTEIN');
   comms.who = 'EINSTEIN';
   comms.line = line;
   comms.shownAt = now;
@@ -88,7 +87,7 @@ export function say(key: string, force = false) {
 /** Show a specific line (cutscenes). */
 // Real voices, no text: the browser's speech synthesis, a different voice
 // for each of them.
-function speak(line: string, who: string) {
+export function speak(line: string, who: string) { // unused: Juan did not like the voices
   try {
     const s = window.speechSynthesis;
     if (!s) return;
@@ -108,7 +107,6 @@ function speak(line: string, who: string) {
 }
 
 export function sayExact(line: string, who = 'EINSTEIN') {
-  speak(line, who);
   comms.who = who;
   comms.line = line;
   comms.shownAt = performance.now() / 1000;

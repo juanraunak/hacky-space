@@ -25,4 +25,4 @@
 .gate-howto i.c { color: #5fe8ff; } .gate-howto i.g { color: #ffd34a; } .gate-howto i.h { color: #6dff9e; }
 
 /* Juan: no text on screen except the objective. */
-.comms, .bubble, .hint, .gate-howto, .status, .pull, .escape { display: none !important; }
+.bubble, .hint, .gate-howto, .status, .pull, .escape, .gate-prompt, .gate-edge { display: none !important; }

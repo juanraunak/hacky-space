@@ -131,3 +131,13 @@ input { -webkit-user-select: text; user-select: text; touch-action: auto; }
 .comms.newton .comms-who { color: #ffcf8a; }
 
 .blackout { position: absolute; inset: 0; background: #000; opacity: 0; }
+
+/* Dialogue box: the only words on screen (Juan: text boxes, no voices). */
+.comms {
+  left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  width: min(640px, 92vw); max-width: none; display: block; padding: 14px 20px 16px;
+  background: rgba(4, 8, 16, 0.82); border: 1px solid rgba(160, 210, 255, 0.35); border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+.comms .comms-who { font-size: 11px; letter-spacing: 0.22em; margin-bottom: 4px; }
+.comms .comms-line { font-size: 17px; line-height: 1.45; }

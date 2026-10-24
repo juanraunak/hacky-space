@@ -192,7 +192,6 @@ function World3D() {
       <Tethers />
       {on('ship') && <LocalShip />}
       <RemoteShips />
-      <Gates />
     </>
   );
 }
