@@ -79,7 +79,7 @@ void main() {
   float dust = ridged(d * 9.0 + uSeed * 0.2, 5);
   vec3 bandCol = mix(vec3(0.55, 0.5, 0.45), vec3(0.75, 0.62, 0.48), clump);
   float tauDust = smoothstep(0.55, 0.95, dust) * 2.2 * band;
-  col += bandCol * band * (0.03 + 0.07 * clump) * exp(-tauDust);
+  col += bandCol * band * (0.02 + 0.045 * clump) * exp(-tauDust);
 
   // Nebula: H-alpha red billowing outside, OIII teal tighter inside, two
   // independent noise fields, low saturation in the bright cores.
@@ -93,7 +93,7 @@ void main() {
   float coreL = dot(neb, vec3(0.3, 0.59, 0.11));
   neb = mix(neb, vec3(coreL), smoothstep(0.08, 0.3, coreL) * 0.5);
   neb *= exp(-smoothstep(0.5, 0.9, ridged(d * 4.0 + uSeed * 0.5, 5)) * 1.5);
-  col += neb;
+  col += neb * 0.45;
 
   // Stars: many faint, a few bright. Denser in the band.
   float dens = mix(0.0, 0.035, band);

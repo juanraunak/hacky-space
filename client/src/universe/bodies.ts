@@ -240,7 +240,7 @@ export function chunkBodies(w: World, cx: number, cy: number, cz: number): Body[
     // A compact system, not a world to wander: empty space with the odd
     // planet near home. The phenomena live at the rescue sites only.
     const near = Math.max(Math.abs(cx), Math.abs(cy), Math.abs(cz)) <= 5;
-    if (near && roll > 0.93 && !blocksLane()) {
+    if (near && roll > 0.975 && !blocksLane()) {
       const radius = range(r, 8, 24);
       out.push(body({ id, kind: 'planet', ...at, radius, gm: 6 * radius * radius, seed: s, rings: r() < 0.4, hue: r() }));
     }

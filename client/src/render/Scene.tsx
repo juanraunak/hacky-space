@@ -15,6 +15,7 @@ import { Starfield } from './Starfield';
 import { FarMarkers } from './FarMarkers';
 import { LocalShip, RemoteShips, Pods, Tethers, Mothership, SpeedDust } from './craft';
 import { Bridge } from './Bridge';
+import { Warp } from './Warp';
 import { GameLoop, CameraRig } from './CameraRig';
 import { camWorld, origin } from './origin';
 import { LAPTOP, Q } from './quality';
@@ -193,6 +194,7 @@ function World3D() {
       {on('ship') && <LocalShip />}
       <RemoteShips />
       {on('dust') && <SpeedDust />}
+      <Warp />
       <Shockwave />
       <SupernovaLayer />
     </>
