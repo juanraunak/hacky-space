@@ -14,7 +14,6 @@ import { C, OXYGEN_S, POD_AIR } from '../game/constants';
 import { beamOn } from '../relativity/hazards';
 import { audio } from '../audio/audio';
 import { BossCard } from './BossCard';
-import { TwinSticks } from './TwinSticks';
 import { StoryLayers } from './StoryEnd';
 import { foot } from '../play/onfoot';
 import { isTouch } from '../input/input';
@@ -352,7 +351,6 @@ export function Hud() {
         <button className="skip" onClick={() => { fx.skipped = true; }}>Skip</button>
       )}
       <Comms />
-      {isTouch() && foot.mode === 'foot' && <TwinSticks />}
       <button className="mute" onClick={() => setMuted(audio.toggleMute())}>{muted ? '🔇' : '🔊'}</button>
       <EndScreen />
       <StoryLayers />

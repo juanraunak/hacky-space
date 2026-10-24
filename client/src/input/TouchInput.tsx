@@ -87,8 +87,8 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
     p.x = e.clientX; p.y = e.clientY;
     p.travel += Math.hypot(dx, dy);
     if (p.role === 'move') setMove(p);
-    // flying on a phone: drag down to look up (Juan); on foot it stays as it was
-    else if (!isLocked()) { input.look.x += dx; input.look.y += input.onFoot ? dy : -dy; }
+    // phone: drag down to look up (Juan), the same on foot and flying
+    else if (!isLocked()) { input.look.x += dx; input.look.y -= dy; }
   }, [setMove]);
 
   const onUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -138,8 +138,8 @@ export function TouchInput({ showButtons }: { showButtons: boolean }) {
         </div>
       )}
       {foot.on && foot.seat && isTouch() && (
-        <div className="touch-buttons">
-          <button className="tb tb-thrust" {...tether}>SIT</button>
+        <div className="touch-buttons one">
+          <button className="tb tb-boost big" {...tether}>SIT</button>
         </div>
       )}
       {showButtons && !foot.on && (
