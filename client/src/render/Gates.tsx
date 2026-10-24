@@ -39,10 +39,18 @@ export function Gates() {
   // DOM: the instruction and the off-screen dot
   const prompt = useRef<HTMLDivElement | null>(null);
   const edge = useRef<HTMLDivElement | null>(null);
+  const howto = useRef<HTMLDivElement | null>(null);
+  const shownAt = useRef(0);
   useEffect(() => {
     const p = document.createElement('div'); p.className = 'gate-prompt'; document.body.appendChild(p); prompt.current = p;
     const e = document.createElement('div'); e.className = 'gate-edge'; document.body.appendChild(e); edge.current = e;
-    return () => { p.remove(); e.remove(); };
+    // How to play, on screen until you pass your first ring (and at least 12 s).
+    const h = document.createElement('div'); h.className = 'gate-howto';
+    h.innerHTML = isTouch()
+      ? '<b>RESCUE YOUR CREWMATE</b><span>Left thumb: steer</span><span>THRUST: fly · BRAKE: stop</span><span>Fly through the <i class="c">cyan rings</i> to the <i class="g">gold ring</i></span><span>Hold TETHER at the pod · then follow the <i class="h">green rings</i> home</span>'
+      : '<b>RESCUE YOUR CREWMATE</b><span>Mouse: steer (point where you want to go)</span><span>W: fly · S: stop · Shift: boost</span><span>Fly through the <i class="c">cyan rings</i> to the <i class="g">gold ring</i></span><span>Hold E at the pod · then follow the <i class="h">green rings</i> home</span>';
+    document.body.appendChild(h); howto.current = h;
+    return () => { p.remove(); e.remove(); h.remove(); };
   }, []);
   const proj = useMemo(() => new THREE.Vector3(), []);
 
@@ -77,6 +85,15 @@ export function Gates() {
         b.scale.setScalar(g.r * (1 + age * 2.5));
         burstMat.opacity = 1 - age / 0.6;
       }
+    }
+
+    // how to play: until the first ring is passed, and for at least 12 s
+    const hw = howto.current;
+    if (hw) {
+      if (route.gates.length && !shownAt.current) shownAt.current = performance.now();
+      const early = shownAt.current && performance.now() - shownAt.current < 12000;
+      const show = route.gates.length > 0 && (route.next === 0 || early) && route.target.kind === 'pod';
+      hw.style.opacity = show ? '1' : '0';
     }
 
     // the instruction at the last ring

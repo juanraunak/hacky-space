@@ -13,3 +13,13 @@
 @keyframes gate-edge-pulse { 50% { transform-origin: center; box-shadow: 0 0 26px 10px rgba(255, 255, 255, 0.35); } }
 /* Hotfix: no dials, gauges or per-beacon arrows; the rings show the way. */
 .dials, .speed, .crew-row, .my-clock, .team, .arrows, .hint { display: none !important; }
+
+.gate-howto {
+  position: fixed; left: 50%; top: max(18px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 20px; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(120, 230, 255, 0.35); transition: opacity 0.5s; max-width: 92vw;
+  font-family: 'Space Grotesk', system-ui, sans-serif; color: #e8f6ff; font-size: clamp(12px, 1.8vw, 15px); text-align: center;
+}
+.gate-howto b { letter-spacing: 0.16em; font-size: 1.1em; color: #fff; margin-bottom: 2px; }
+.gate-howto i { font-style: normal; font-weight: 700; }
+.gate-howto i.c { color: #5fe8ff; } .gate-howto i.g { color: #ffd34a; } .gate-howto i.h { color: #6dff9e; }
