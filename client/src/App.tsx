@@ -4,6 +4,7 @@ import { goToRoom, useRoomCode } from './routing';
 import { Lobby } from './lobby/Lobby';
 import { DebugTables } from './lobby/DebugTables';
 import { GameScreen } from './play/GameScreen';
+import { SpaceBackdrop } from './lobby/SpaceBackdrop';
 
 const NAME_KEY = 'hackyspace.name';
 const readName = () => { try { return localStorage.getItem(NAME_KEY) ?? ''; } catch { return ''; } };
@@ -34,20 +35,25 @@ export function App() {
 
   if (!name) {
     return (
-      <NamePrompt onName={n => { saveName(n); setName(n); }} />
+      <>
+        <SpaceBackdrop />
+        <NamePrompt onName={n => { saveName(n); setName(n); }} />
+      </>
     );
   }
 
   if (!code) {
     return (
+      <>
+      <SpaceBackdrop />
       <main className="screen title">
-        <img className="title-art" src="/einstein-ending.jpg" alt="Einstein, chief scientist" />
         <h1>HACKY SPACE</h1>
         <p className="dim">The star is dying. The crew is scattered. Every pod's clock runs at its own speed.<br />Bring them home, together.</p>
         <button className="big" onClick={host}>Host a room</button>
         <p className="dim small">Friends join by scanning your room's QR code.</p>
         {error && <p className="error">{error}</p>}
       </main>
+      </>
     );
   }
 
@@ -64,7 +70,7 @@ export function App() {
   // Every client renders purely from room.phase.
   return (
     <>
-      {room.phase === 'lobby' ? <Lobby /> : <GameScreen />}
+      {room.phase === 'lobby' ? <><SpaceBackdrop /><Lobby /></> : <GameScreen />}
       {new URLSearchParams(location.search).has('debug') && <DebugTables />}
     </>
   );
@@ -74,7 +80,6 @@ function NamePrompt({ onName }: { onName: (n: string) => void }) {
   const [v, setV] = useState('');
   return (
     <main className="screen title">
-      <img className="title-art" src="/einstein-comms.jpg" alt="Einstein, chief scientist" />
       <h1>HACKY SPACE</h1>
       <form onSubmit={e => { e.preventDefault(); if (v.trim()) onName(v.trim().slice(0, 16)); }}>
         <input autoFocus value={v} onChange={e => setV(e.target.value)} placeholder="Your pilot name" maxLength={16} />

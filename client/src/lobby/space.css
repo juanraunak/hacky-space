@@ -1,0 +1,5 @@
+.space-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.space-backdrop canvas { position: absolute; inset: 0; }
+.space-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(5, 6, 13, 0.15) 0%, rgba(5, 6, 13, 0.75) 100%); }
+.screen { position: relative; z-index: 1; }
+.title h1 { text-shadow: 0 0 30px rgba(140, 190, 255, 0.45); }
